@@ -1,0 +1,21 @@
+{
+  "name": "depth-first",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "check": "node scripts/check.mjs"
+  },
+  "version": "0.1.0",
+  "dependencies": {
+    "nuxt": "^4.5.2"
+  },
+  "description": "Interactive, step-by-step traces of interview algorithms.",
+  "imports": {
+    "#engine/*": "./shared/engine/*",
+    "#content/*": "./content/*"
+  }
+}
