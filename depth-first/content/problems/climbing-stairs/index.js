@@ -29,6 +29,13 @@ export default {
   },
   checkInputs: ['1', '2', '3', '4', '5', '6', '7', '8'],
 
+  video: {
+    // Verified via YouTube oEmbed: author_name "NeetCode".
+    youtubeId: 'Y0lT9Fck7qI',
+    title: 'Climbing Stairs - Dynamic Programming - Leetcode 70 - Python',
+    channel: 'NeetCode',
+  },
+
   links: {
     leetcode: 'https://leetcode.com/problems/climbing-stairs/',
     neetcode: 'https://neetcode.io/problems/climbing-stairs',
@@ -65,12 +72,35 @@ export default {
 
   badgeLabels: { naive: 'Return value', memo: 'Return value', table: 'Value' },
 
+
+  // A scripted walkthrough. Each stop drives the instrument: picks an approach,
+  // rings the panel being discussed, and optionally plays the trace.
+  tour: [
+    { focus: 'tabs', approach: 'naive',
+      text: 'Three tabs, one algorithm. They are the same recurrence written three ways, and they are meant to be watched in order.' },
+    { focus: 'code', approach: 'naive',
+      text: 'Start naive. This is a literal transcription of the problem: to reach step k you arrived from k-1 or from k-2, so add those two answers together.' },
+    { focus: 'stage', approach: 'naive', play: true,
+      text: 'Play it. Watch the tree grow — and watch for boxes marked ×2 or ×3 above them.' },
+    { focus: 'stage', approach: 'naive', at: 'last',
+      text: 'There is the whole tree. Every ×N marks a subproblem solved that many times, from scratch, including everything underneath it.' },
+    { focus: 'stage', approach: 'memo', play: true,
+      text: 'Same function, plus a dictionary. Now watch the green nodes: each one is an entire subtree that never gets built at all.' },
+    { focus: 'dp', approach: 'memo', at: 'last',
+      text: 'And watch the memo fill from the bottom up, smallest k first — because a value can only be written once its children have returned.' },
+    { focus: 'stage', approach: 'table', play: true,
+      text: 'The memo just told you the state is a single number k. So drop the recursion, allocate an array indexed by k, and fill it left to right.' },
+    { focus: null, approach: 'table', at: 'last',
+      text: 'That is the whole arc. The parameter that changed between calls became the memo key, and then the array index. Same derivation works when two things vary — you just get a 2D table.' },
+  ],
+
   approaches,
   approachById,
 
   essay: [
     {
       kicker: 'Finding the state',
+      figure: { approach: 'naive', at: 'last', caption: 'Every box is climb(k) — same function, one argument. The only thing that differs between calls is k, so k is the state.' },
       heading: 'Write the recursion first. The state falls out of it.',
       html: `
         <p>
@@ -96,6 +126,7 @@ export default {
     },
     {
       kicker: 'Why the naive version is slow',
+      figure: { approach: 'naive', at: 'last', input: '6', caption: 'climb(6) naively: 15 calls to answer 6 distinct questions. The ×N marks show how many times each subproblem is rebuilt.' },
       heading: 'Nothing remembers anything',
       html: `
         <p>
@@ -108,7 +139,7 @@ export default {
           The captions call out every repeat as it happens, and the duplicated nodes are outlined so
           you can see the same subtree appearing in different parts of the picture. At
           <code>n = 8</code> the tree is already too wide to fit on screen, which is the honest
-          visual: 67 calls to answer 8 distinct questions.
+          visual: 41 calls to answer 8 distinct questions.
         </p>
         <p>
           Nothing about the <em>logic</em> is wrong. The recursion is a faithful transcription of the
@@ -119,6 +150,7 @@ export default {
     },
     {
       kicker: 'The collapse',
+      figure: { approach: 'memo', at: 'last', input: '6', caption: 'The same n = 6, memoised. Each green node is an entire subtree that was never built — compare its width with the figure above.' },
       heading: 'One dictionary, and the tree becomes a spine',
       html: `
         <p>
@@ -167,7 +199,7 @@ export default {
     items: [
       {
         title: 'Submitting the naive version because <code>n</code> looked small',
-        body: 'The constraint is <code>n <= 45</code>, which sounds harmless and is not. The naive tree at n=45 is roughly 3.6 billion calls. This is the single most common way people fail this "easy" problem.',
+        body: 'The constraint is <code>n <= 45</code>, which sounds harmless and is not. The naive tree at n=45 is about 2.3 billion calls. This is the single most common way people fail this "easy" problem.',
       },
       {
         title: 'Getting the base cases off by one',

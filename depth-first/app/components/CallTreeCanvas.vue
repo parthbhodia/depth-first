@@ -4,6 +4,8 @@ import { computed } from 'vue';
 const props = defineProps({
   lay: { type: Object, required: true },
   frame: { type: Object, default: null },
+  // Figures scale to fit; the live canvas keeps natural size and scrolls.
+  compact: { type: Boolean, default: false },
 });
 
 const revealed = computed(() => (props.frame ? props.frame.revealed || 0 : 0));
@@ -35,7 +37,7 @@ const nodeClass = (n) => ({
 </script>
 
 <template>
-  <div class="calltree-hold" :class="{ bare: !lay.nodes.length }">
+  <div class="calltree-hold" :class="{ bare: !lay.nodes.length, compact }">
     <p v-if="!lay.nodes.length" class="empty-note">
       No recursion tree — this version never calls itself.
     </p>

@@ -528,6 +528,8 @@ function tableFrames(n) {
 export const approaches = [
   {
     id: 'naive',
+    watchFor:
+      'Count how many times climb(3) appears. Every repeat is a subtree being rebuilt from nothing.',
     name: 'Naive recursion',
     tagline: 'Correct, and unusably slow. Watch why.',
     idea:
@@ -542,6 +544,8 @@ export const approaches = [
   },
   {
     id: 'memo',
+    watchFor:
+      'Watch the green nodes. Each one is an entire subtree that never gets built.',
     name: 'Memoised',
     tagline: 'One line of storage collapses the tree.',
     idea:
@@ -556,6 +560,8 @@ export const approaches = [
   },
   {
     id: 'table',
+    watchFor:
+      'Watch the two blue cells feeding the amber one. That is the recursion, read instead of recomputed.',
     name: 'Bottom-up table',
     tagline: 'Throw the recursion away and fill left to right.',
     idea:

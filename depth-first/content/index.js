@@ -1,4 +1,5 @@
 import maxDepthBinaryTree from './problems/maximum-depth-of-binary-tree/index.js';
+import countGoodNodes from './problems/count-good-nodes-in-binary-tree/index.js';
 import climbingStairs from './problems/climbing-stairs/index.js';
 
 /**
@@ -18,7 +19,7 @@ import climbingStairs from './problems/climbing-stairs/index.js';
  *   reference    (input) => the correct answer, for the check script
  *   checkInputs  input strings to verify against
  */
-export const problems = [maxDepthBinaryTree, climbingStairs];
+export const problems = [maxDepthBinaryTree, countGoodNodes, climbingStairs];
 
 export const problemBySlug = (slug) => problems.find((p) => p.slug === slug) || null;
 

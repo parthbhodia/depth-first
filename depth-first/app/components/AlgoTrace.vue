@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { layout, LAYOUT } from '#engine/tree.js';
 import { layoutCallTree, CALL_LAYOUT } from '#engine/calltree.js';
 import { speechRate } from '#engine/speech.js';
@@ -93,6 +93,16 @@ const badgeLabel = computed(
   () => props.problem.badgeLabels?.[approachId.value] || 'Value'
 );
 
+// Set only by problems that carry context down the tree.
+const carryLabel = computed(
+  () => props.problem.carryLabels?.[approachId.value] || 'Carried in'
+);
+const usesCarry = computed(() => Boolean(props.problem.carryLabels));
+
+// The note beside the tabs explains the number drawn on the nodes. Where
+// context flows down, the carried value is the one worth explaining.
+const tabNote = computed(() => (usesCarry.value ? carryLabel.value : badgeLabel.value));
+
 const panelTitle = computed(() => {
   if (approach.value.stackPanel === 'none') return 'Call stack';
   if (approach.value.stackPanel === 'call') return 'Call stack  (bottom → top)';
@@ -112,6 +122,15 @@ const emptyPanelNote = computed(() =>
 
 const legend = computed(() => {
   if (!isCallTree.value) {
+    if (usesCarry.value) {
+      return [
+        { cls: 'a', text: 'executing' },
+        { cls: 'c', text: `${carryLabel.value.toLowerCase()} (from above)` },
+        { cls: 'd', text: 'good' },
+        { cls: 'x', text: 'blocked by an ancestor' },
+        { cls: 'g', text: 'null child' },
+      ];
+    }
     return [
       { cls: 'a', text: 'executing' },
       { cls: 'p', text: 'on the stack' },
@@ -140,11 +159,98 @@ function isTop(i) {
   return frame.value?.aux?.kind === 'stack' ? i === panelItems.value.length - 1 : i === 0;
 }
 
+// The approaches tell a story in order. Numbering them and handing off at the
+// end of each trace is what turns three tabs into a sequence you follow.
+const approachIndex = computed(() =>
+  props.problem.approaches.findIndex((a) => a.id === approachId.value));
+
+const nextApproach = computed(() =>
+  props.problem.approaches[approachIndex.value + 1] || null);
+
+// Before the first play the stage is a single inert node — it reads as broken.
+// A start cue removes that, and disappears for good once they've engaged.
+const started = ref(false);
+watch(playing, (v) => { if (v) started.value = true; });
+watch(index, (v) => { if (v > 0) started.value = true; });
+
+function startTrace() {
+  started.value = true;
+  if (!playing.value) toggle();
+}
+
+/* ---------- guided tour ----------
+   A scripted sequence that drives the instrument rather than talking over it:
+   each stop selects an approach, rings the panel under discussion, and either
+   plays the trace or jumps to the frame that makes the point. */
+const tour = computed(() => props.problem.tour || []);
+const tourOn = ref(false);
+const tourAt = ref(0);
+const tourStop = computed(() => (tourOn.value ? tour.value[tourAt.value] || null : null));
+const focusZone = computed(() => (tourStop.value ? tourStop.value.focus : null));
+
+function applyStop() {
+  const stop = tourStop.value;
+  if (!stop) return;
+  if (stop.approach && stop.approach !== approachId.value) approachId.value = stop.approach;
+  started.value = true;
+
+  // The approach switch resets frames via the watcher; act after that lands.
+  nextTick(() => {
+    cancelSpeech();
+    if (stop.play) {
+      restart();
+      if (!playing.value) toggle();
+      return;
+    }
+    stop2(stop);
+  });
+}
+
+function stop2(stop) {
+  if (stop.at === 'last') { scrub(last.value); return; }
+  if (typeof stop.at === 'number') { scrub(stop.at); return; }
+  if (stop.at && stop.at.anchor) {
+    const i = frames.value.findIndex((f) => f.anchor === stop.at.anchor);
+    scrub(i >= 0 ? i : 0);
+    return;
+  }
+  if (!stop.play) restart();
+}
+
+function startTour() {
+  tourOn.value = true;
+  tourAt.value = 0;
+  applyStop();
+}
+function tourNext() {
+  if (tourAt.value >= tour.value.length - 1) { endTour(); return; }
+  tourAt.value += 1;
+  applyStop();
+}
+function tourBack() {
+  if (tourAt.value === 0) return;
+  tourAt.value -= 1;
+  applyStop();
+}
+function endTour() {
+  tourOn.value = false;
+  stop();
+  cancelSpeech();
+}
+
+function goNext() {
+  if (!nextApproach.value) return;
+  approachId.value = nextApproach.value.id;
+  // restart() runs from the frames watcher; play once the new trace is loaded.
+  nextTick(() => { started.value = true; toggle(); });
+}
+
 const result = computed(() => {
   const r = frame.value?.result;
   return r === null || r === undefined ? null : r;
 });
 
+watch(treeText, () => { started.value = false; });
 watch([approachId, treeText], () => {
   cancelSpeech();
   restart();
@@ -169,38 +275,102 @@ onBeforeUnmount(() => {
 <template>
   <section class="instrument" aria-label="Algorithm trace">
     <div class="rig-head">
-      <div class="tabs">
+      <div class="tabs" :class="{ 'tour-focus': focusZone === 'tabs' }">
         <button
-          v-for="a in problem.approaches"
+          v-for="(a, i) in problem.approaches"
           :key="a.id"
           class="tab"
           type="button"
           :aria-pressed="a.id === approachId ? 'true' : 'false'"
           @click="approachId = a.id"
-        >{{ a.name }}</button>
+        ><i class="tabnum">{{ i + 1 }}</i>{{ a.name }}</button>
       </div>
       <div class="tab-note">{{ approach.time }} time · {{ approach.space }} space</div>
     </div>
 
-    <div class="rig">
+    <!-- Controls sit ABOVE the panes: the whole instrument is ~1000px tall, so
+         bottom-mounted controls put Play a screen and a half below the fold. -->
+    <div class="transport top">
+      <button class="btn primary" type="button" @click="toggle">
+        {{ playing ? '❚❚ Pause' : (index === 0 ? '▶ Play the trace' : '▶ Resume') }}
+      </button>
+      <button class="btn" type="button" title="Previous (←)" :disabled="index === 0" @click="step(-1)">‹</button>
+      <button class="btn" type="button" title="Next (→)" :disabled="index === last" @click="step(1)">›</button>
+      <button class="btn" type="button" title="Restart (R)" @click="restart">⟲</button>
+      <span class="stepcount">{{ String(index + 1).padStart(2, '0') }} / {{ frames.length }}</span>
+      <input
+        type="range"
+        min="0"
+        :max="last"
+        :value="index"
+        aria-label="Scrub through steps"
+        @input="scrub($event.target.value)"
+      >
+      <button
+        v-if="voiceSupported"
+        class="btn narrate"
+        type="button"
+        title="Read each step aloud (V)"
+        :aria-pressed="voiceOn ? 'true' : 'false'"
+        @click="toggleNarration"
+      >{{ voiceOn ? '🔊' : '🔇' }}</button>
+      <span class="speed">
+        <button
+          v-for="sp in [0.5, 1, 2]"
+          :key="sp"
+          class="lang"
+          type="button"
+          :aria-pressed="speed === sp ? 'true' : 'false'"
+          @click="speed = sp"
+        >{{ sp }}×</button>
+      </span>
+    </div>
+
+    <div v-if="tourOn" class="tourbar">
+      <span class="tourstep">Tour {{ tourAt + 1 }} / {{ tour.length }}</span>
+      <p class="tourtext">{{ tourStop ? tourStop.text : '' }}</p>
+      <span class="tournav">
+        <button class="btn" type="button" :disabled="tourAt === 0" @click="tourBack">‹ Back</button>
+        <button class="btn primary" type="button" @click="tourNext">
+          {{ tourAt === tour.length - 1 ? 'Finish' : 'Next ›' }}
+        </button>
+        <button class="btn ghost" type="button" @click="endTour">Exit</button>
+      </span>
+    </div>
+
+    <p v-else-if="approach.watchFor" class="watchfor">
+      <b>What to watch</b>{{ approach.watchFor }}
+      <button v-if="tour.length" class="tourstart" type="button" @click="startTour">
+        ✦ Take the guided tour
+      </button>
+    </p>
+
+    <div class="rig" :class="{ touring: tourOn }">
       <CodePane
+        :class="{ 'tour-focus': focusZone === 'code' }"
         :code="approach.code"
         :lang="langId"
         :anchor="frame ? frame.anchor : null"
         @update:lang="langId = $event"
       />
 
-      <div class="pane pane-stage">
+      <div class="pane pane-stage" :class="{ 'tour-focus': focusZone === 'stage' }">
         <div class="pane-head">
           <span>{{ isCallTree ? 'Call tree' : 'Tree' }}</span>
-          <span class="tab-note">{{ badgeLabel }}</span>
+          <span class="tab-note">{{ tabNote }}</span>
         </div>
 
         <div class="stage-body">
-          <CallTreeCanvas v-if="isCallTree" :lay="lay" :frame="frame" />
-          <TreeCanvas v-else :lay="lay" :frame="frame" :badge-label="badgeLabel" />
+          <button v-if="!started" class="startcue" type="button" @click="startTrace">
+            <span class="startcue-btn">▶</span>
+            <b>Play the trace</b>
+            <em>{{ frames.length }} steps · or press space</em>
+          </button>
 
-          <DpTable v-if="isCallTree" :frame="frame" />
+          <CallTreeCanvas v-if="isCallTree" :lay="lay" :frame="frame" />
+          <TreeCanvas v-else :lay="lay" :frame="frame" :badge-label="badgeLabel" :carry-label="carryLabel" />
+
+          <DpTable v-if="isCallTree" :frame="frame" :class="{ 'tour-focus': focusZone === 'dp' }" />
 
           <div v-if="legend.length" class="legend">
             <span v-for="l in legend" :key="l.text"><i class="dot" :class="l.cls" />{{ l.text }}</span>
@@ -208,7 +378,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="readouts">
-          <div class="stackbox">
+          <div class="stackbox" :class="{ 'tour-focus': focusZone === 'stack' }">
             <div class="pane-head">{{ panelTitle }}</div>
             <div class="frames" :class="{ row: isRow }">
               <div
@@ -239,41 +409,15 @@ onBeforeUnmount(() => {
     </div>
 
     <p class="caption" :class="{ speaking: voiceOn && playing }" aria-live="polite">
-      <span class="step">{{ String(index + 1).padStart(2, '0') }} / {{ frames.length }}</span>
       <span>{{ frame ? frame.caption : '' }}</span>
     </p>
 
-    <div class="transport">
-      <button class="btn" type="button" title="Restart (R)" @click="restart">⟲ Restart</button>
-      <button class="btn" type="button" title="Previous (←)" :disabled="index === 0" @click="step(-1)">‹ Back</button>
-      <button class="btn primary" type="button" @click="toggle">{{ playing ? '❚❚ Pause' : '▶ Play' }}</button>
-      <button class="btn" type="button" title="Next (→)" :disabled="index === last" @click="step(1)">Next ›</button>
-      <input
-        type="range"
-        min="0"
-        :max="last"
-        :value="index"
-        aria-label="Scrub through steps"
-        @input="scrub($event.target.value)"
-      >
-      <button
-        v-if="voiceSupported"
-        class="btn narrate"
-        type="button"
-        title="Read each step aloud (V)"
-        :aria-pressed="voiceOn ? 'true' : 'false'"
-        @click="toggleNarration"
-      >{{ voiceOn ? '🔊' : '🔇' }} Narrate</button>
-      <span class="speed">
-        <button
-          v-for="s in [0.5, 1, 2]"
-          :key="s"
-          class="lang"
-          type="button"
-          :aria-pressed="speed === s ? 'true' : 'false'"
-          @click="speed = s"
-        >{{ s }}×</button>
-      </span>
+    <div v-if="index === last && nextApproach" class="handoff">
+      <span>That's the whole trace.</span>
+      <button class="btn primary" type="button" @click="goNext">
+        Next: {{ nextApproach.name }} →
+      </button>
+      <span class="handoff-why">{{ nextApproach.tagline }}</span>
     </div>
 
     <div class="inputs">

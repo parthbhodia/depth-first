@@ -54,6 +54,70 @@
   color: var(--ink-2); max-width: 60ch; margin: 18px 0 0;
 }
 
+/* ---------- start here ---------- */
+
+.starthere {
+  margin-top: 34px; display: flex; flex-wrap: wrap; align-items: center;
+  gap: 8px 18px; padding: 18px 22px;
+  border: 1px solid var(--rule); border-left: 3px solid var(--active);
+  border-radius: 4px; background: var(--paper); box-shadow: var(--shadow);
+}
+.starthere .sh-k {
+  font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--active);
+  flex: 0 0 auto;
+}
+.starthere .sh-t {
+  font-family: "Newsreader", Georgia, serif; font-size: 17px; color: var(--ink-2);
+  flex: 1 1 260px; margin: 0;
+}
+.starthere .sh-t b { font-family: "Archivo", sans-serif; font-size: 15px; color: var(--ink); }
+.starthere .btn { flex: 0 0 auto; text-decoration: none; }
+
+/* ---------- roadmap ---------- */
+
+.roadmap { margin-top: 64px; }
+.roadmap .index-head { margin-top: 0; }
+.roadnote {
+  font-family: "Newsreader", Georgia, serif; font-size: 16.5px; line-height: 1.6;
+  color: var(--ink-2); max-width: 74ch; margin: 16px 0 0;
+}
+.roadhold {
+  margin-top: 22px; overflow-x: auto; padding: 4px 2px 14px;
+  -webkit-overflow-scrolling: touch;
+}
+.roadcanvas { position: relative; }
+.roadedges { position: absolute; inset: 0; color: var(--rule-2); overflow: visible; }
+.roadedge { fill: none; stroke: var(--rule-2); stroke-width: 1.6; stroke-dasharray: 4 4; }
+.roadedge.live { stroke: var(--brand); stroke-dasharray: none; opacity: .55; color: var(--brand); }
+
+.roadnode {
+  position: absolute; display: flex; flex-direction: column; gap: 3px;
+  padding: 11px 14px; border-radius: 4px; text-decoration: none;
+  background: var(--paper); overflow: hidden;
+}
+.roadnode.ready {
+  border: 1.5px solid var(--rule-2); color: inherit; box-shadow: var(--shadow);
+}
+.roadnode.ready:hover { border-color: var(--brand); background: var(--brand-soft); }
+.roadnode.ready:hover .rn-label { color: var(--brand-ink); }
+.roadnode.planned {
+  border: 1.5px dashed var(--rule); background: transparent; opacity: .62;
+}
+.rn-label {
+  font-size: 14px; font-weight: 700; font-stretch: 106%;
+  letter-spacing: -.008em; line-height: 1.2; color: var(--ink);
+}
+.rn-blurb {
+  font-family: "Newsreader", Georgia, serif; font-size: 13.5px; line-height: 1.35;
+  color: var(--ink-2);
+}
+.rn-meta {
+  margin-top: auto; font-family: "JetBrains Mono", monospace; font-size: 10px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+}
+.roadnode.ready .rn-meta { color: var(--done); }
+
 /* ---------- problem index ---------- */
 
 .index-head {
@@ -290,4 +354,242 @@ svg.calltree { display: block; max-width: none; }
 .cdup {
   font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 700;
   fill: var(--active); text-anchor: start; dominant-baseline: alphabetic;
+}
+
+/* ============================================================
+   Wayfinding — the page has to say what to do, and in what order.
+   ============================================================ */
+
+.problem-head { padding: 14px 0 20px; }
+.lede.short { font-size: 18px; max-width: 58ch; margin-top: 12px; }
+
+/* Numbered tabs: three options read as a menu, 1→2→3 reads as a route. */
+.tabnum {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; margin-right: 8px; border-radius: 50%;
+  font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 700;
+  font-style: normal; background: var(--panel-2); color: var(--ink-3);
+}
+.tab[aria-pressed="true"] .tabnum { background: var(--brand); color: var(--on-brand); }
+
+/* Controls above the panes, not 1000px below them. */
+.transport.top {
+  border-top: 0; border-bottom: 1px solid var(--rule);
+  background: var(--paper); gap: 8px;
+}
+.transport.top .btn { padding: 8px 11px; }
+.transport.top .btn.primary { min-width: 132px; font-size: 13px; }
+.stepcount {
+  font-family: "JetBrains Mono", monospace; font-size: 11.5px;
+  color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+.watchfor {
+  margin: 0; padding: 11px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--brand-soft);
+  font-family: "Newsreader", Georgia, serif; font-size: 16px; color: var(--ink);
+}
+.watchfor b {
+  font-family: "Archivo", sans-serif; font-size: 10.5px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--brand-ink);
+  margin-right: 12px;
+}
+
+/* An un-played trace is one inert node — it reads as broken without this. */
+.stage-body { position: relative; }
+.startcue {
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; cursor: pointer; border: 0;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(2px);
+  font: inherit; color: var(--ink);
+}
+.startcue-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--brand); color: var(--on-brand); font-size: 19px;
+  padding-left: 4px;
+}
+.startcue b { font-size: 17px; font-weight: 700; font-stretch: 110%; }
+.startcue em {
+  font-style: normal; font-family: "JetBrains Mono", monospace;
+  font-size: 11px; color: var(--ink-3);
+}
+.startcue:hover .startcue-btn { filter: brightness(1.1); }
+
+/* Finishing a trace should push you to the next one, not dead-end. */
+.handoff {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 13px 16px; border-top: 1px solid var(--rule);
+  background: var(--done-soft);
+  font-family: "Newsreader", Georgia, serif; font-size: 16px; color: var(--ink);
+}
+.handoff-why { color: var(--ink-2); font-size: 15px; }
+
+.caption { min-height: 0; padding: 14px 16px; }
+
+/* The statement is reference, not the main event. */
+.statement-fold {
+  margin-top: 14px; border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--paper);
+}
+.statement-fold > summary {
+  cursor: pointer; padding: 13px 18px; list-style: none;
+  font-size: 12.5px; font-weight: 600; color: var(--ink-2);
+}
+.statement-fold > summary::-webkit-details-marker { display: none; }
+.statement-fold > summary::before { content: "▸ "; color: var(--ink-3); }
+.statement-fold[open] > summary::before { content: "▾ "; }
+.statement-fold > summary:hover { color: var(--brand-ink); }
+.statement-fold .statement { margin: 0; border: 0; border-top: 1px solid var(--rule); border-radius: 0; }
+
+/* 4000px of essay needs a map. */
+.toc {
+  display: flex; gap: 6px 10px; flex-wrap: wrap; align-items: baseline;
+  margin-top: 40px; padding: 14px 16px;
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--panel);
+}
+.toc-lead {
+  font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  margin-right: 4px;
+}
+.toc a {
+  font-size: 13px; font-weight: 600; color: var(--ink-2);
+  text-decoration: none; padding: 4px 9px; border-radius: 99px;
+  border: 1px solid var(--rule-2);
+}
+.toc a:hover { color: var(--brand-ink); border-color: var(--brand); background: var(--paper); }
+
+.essay section { scroll-margin-top: 76px; }
+.essay { margin-top: 40px; }
+
+/* ---------- collapsed depth ---------- */
+
+.essay.lead { margin-top: 44px; }
+.essay.lead section { margin-top: 44px; }
+.essay.lead section:first-child { margin-top: 0; }
+
+.deeper { margin-top: 56px; }
+.deeper-head {
+  font-size: 12px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--brand-ink); margin: 0 0 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.deeper-head::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+.fold {
+  border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--paper); margin-bottom: 8px;
+}
+.fold > summary {
+  cursor: pointer; padding: 15px 20px; list-style: none;
+  font-size: 16px; font-weight: 700; font-stretch: 106%;
+  letter-spacing: -.008em; color: var(--ink);
+  display: flex; align-items: baseline; gap: 12px;
+}
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary::before {
+  content: "+"; font-family: "JetBrains Mono", monospace; font-size: 15px;
+  color: var(--ink-3); flex: 0 0 auto; line-height: 1;
+}
+.fold[open] > summary::before { content: "–"; color: var(--brand-ink); }
+.fold > summary:hover { color: var(--brand-ink); }
+.fold[open] > summary { border-bottom: 1px solid var(--rule); }
+
+.foldbody { padding: 4px 20px 20px; }
+.foldbody.essay section { margin-top: 18px; }
+.foldbody .statement { margin-top: 14px; }
+.foldbody ol.traps, .foldbody ul.next { margin-top: 14px; }
+
+/* ---------- video ---------- */
+
+.videoblock { margin-top: 56px; }
+.videoblock h2 {
+  font-size: 12px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--brand-ink); margin: 0 0 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.videoblock h2::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.videonote {
+  font-family: "Newsreader", Georgia, serif; font-size: 17px; line-height: 1.6;
+  color: var(--ink-2); max-width: 62ch; margin: 0 0 16px;
+}
+.videoframe {
+  position: relative; width: 100%; max-width: 760px; aspect-ratio: 16 / 9;
+  border: 1px solid var(--rule); border-radius: 4px; overflow: hidden;
+  background: var(--panel);
+}
+.videoframe iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.videocredit {
+  font-size: 13px; color: var(--ink-3); margin: 10px 0 0; max-width: 760px;
+}
+.videocredit a { color: var(--brand-ink); }
+
+/* ---------- figures inside the prose ---------- */
+
+.tracefig {
+  margin: 22px 0 0; padding: 16px 16px 12px;
+  border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--paper); max-width: 760px;
+}
+.tracefig-canvas { display: flex; justify-content: center; overflow-x: auto; }
+.tracefig figcaption {
+  margin-top: 12px; padding-top: 11px; border-top: 1px solid var(--rule);
+  font-family: "Newsreader", Georgia, serif; font-size: 14.5px;
+  line-height: 1.5; color: var(--ink-2);
+}
+.tracefig .calltree-hold,
+.tracefig .canvas-hold { min-height: 0; }
+.calltree-hold.compact { overflow: visible; }
+.calltree-hold.compact svg.calltree { max-width: 100%; height: auto; }
+
+/* ---------- guided tour ---------- */
+
+.tourstart {
+  float: right; font: inherit; font-family: "Archivo", sans-serif;
+  font-size: 11.5px; font-weight: 700; cursor: pointer;
+  padding: 5px 12px; border-radius: 99px;
+  border: 1px solid var(--brand); background: var(--paper); color: var(--brand-ink);
+}
+.tourstart:hover { background: var(--brand); color: var(--on-brand); }
+
+.tourbar {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px 16px; align-items: center;
+  padding: 13px 16px; border-bottom: 1px solid var(--rule);
+  background: var(--brand-soft);
+}
+@media (max-width: 780px) { .tourbar { grid-template-columns: minmax(0,1fr); } }
+.tourstep {
+  font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--brand-ink);
+  white-space: nowrap;
+}
+.tourtext {
+  margin: 0; font-family: "Newsreader", Georgia, serif;
+  font-size: 16.5px; line-height: 1.5; color: var(--ink);
+}
+.tournav { display: flex; gap: 6px; }
+.btn.ghost { border-color: transparent; color: var(--ink-3); }
+.btn.ghost:hover { color: var(--ink); border-color: var(--rule-2); }
+
+/* Ring the panel under discussion; drop everything else back. */
+.rig.touring .pane,
+.rig.touring .stackbox,
+.rig.touring .dp { transition: opacity .2s ease; opacity: .38; }
+.rig.touring .tour-focus,
+.touring .tabs.tour-focus { opacity: 1; }
+.tabs.tour-focus {
+  outline: 2px solid var(--brand); outline-offset: 4px; border-radius: 4px;
+}
+.rig.touring .pane.tour-focus { position: relative; z-index: 1; }
+.rig.touring .pane.tour-focus::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  outline: 2px solid var(--brand); outline-offset: -2px;
+}
+.rig.touring .stackbox.tour-focus,
+.rig.touring .dp.tour-focus {
+  outline: 2px solid var(--brand); outline-offset: -2px; border-radius: 3px;
 }

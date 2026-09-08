@@ -615,6 +615,8 @@ function bfsFrames(root) {
 export const approaches = [
   {
     id: 'recursive',
+    watchFor:
+      'Watch the green badges appear bottom-up. Leaves first, root last — the answer is built on the way back UP.',
     name: 'Recursive DFS',
     tagline: 'The one-liner everyone should know cold.',
     idea:
@@ -629,6 +631,8 @@ export const approaches = [
   },
   {
     id: 'iterative',
+    watchFor:
+      'Watch the depth travel DOWN inside each stack pair — the opposite direction to the recursive tab.',
     name: 'Iterative DFS',
     tagline: 'Same traversal, but you own the stack.',
     idea:
@@ -643,6 +647,8 @@ export const approaches = [
   },
   {
     id: 'bfs',
+    watchFor:
+      'Watch the queue drain one full row at a time. The number of drains is the depth.',
     name: 'BFS / Level Order',
     tagline: 'Count the rows. The most reusable template of the three.',
     idea:

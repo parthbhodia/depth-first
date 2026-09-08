@@ -35,6 +35,13 @@ export default {
     '[5,4,8,11,null,13,4,7,2,null,null,null,1]',
   ],
 
+  video: {
+    // Verified via YouTube oEmbed: author_name "NeetCode".
+    youtubeId: 'hTM3phVI6YQ',
+    title: 'Maximum Depth of Binary Tree - 3 Solutions - Leetcode 104 - Python',
+    channel: 'NeetCode',
+  },
+
   links: {
     leetcode: 'https://leetcode.com/problems/maximum-depth-of-binary-tree/',
     neetcode: 'https://neetcode.io/problems/depth-of-binary-tree',
@@ -76,12 +83,33 @@ export default {
   // Per-approach label for the number that appears on each node.
   badgeLabels: { recursive: 'Return value', iterative: 'Depth', bfs: 'Level' },
 
+
+  // A scripted walkthrough. Each stop drives the instrument: picks an approach,
+  // rings the panel being discussed, and optionally plays the trace.
+  tour: [
+    { focus: 'tabs', approach: 'recursive',
+      text: 'Three tabs, one problem. Same answer every time — what changes is where the depth is kept.' },
+    { focus: 'code', approach: 'recursive',
+      text: 'The recursive version is the definition of depth, written out: one for this node, plus the deeper of its two subtrees.' },
+    { focus: 'stage', approach: 'recursive', play: true,
+      text: 'Play it and watch the green badges. Nothing counts on the way down — the answers are built on the way back UP.' },
+    { focus: 'stack', approach: 'recursive', at: { anchor: 'retZero' },
+      text: 'This is the base case. A missing child is a real call that really returns 0, drawn here as the dashed null node.' },
+    { focus: 'stage', approach: 'iterative', play: true,
+      text: 'Now the iterative version. The badges are depths handed DOWN inside each [node, depth] pair — the opposite flow to the tab you just watched.' },
+    { focus: 'stage', approach: 'bfs', play: true,
+      text: 'And BFS never tracks depth at all. It drains one full row at a time, so the number of rows IS the depth.' },
+    { focus: null, approach: 'recursive',
+      text: 'Three ways to hold the same fact. Being able to say which direction the information flows is most of what an interviewer is listening for.' },
+  ],
+
   approaches,
   approachById,
 
   essay: [
     {
       kicker: 'The whole problem',
+      figure: { approach: 'recursive', at: 'last', caption: 'The finished recursive trace. Every badge is what that node returned — leaves first, root last.' },
       heading: 'One sentence, written twice',
       html: `
         <p>Depth is defined recursively, so the definition <em>is</em> the algorithm. Say it in English
@@ -98,6 +126,7 @@ export default {
     },
     {
       kicker: 'The part that trips people',
+      figure: { approach: 'iterative', at: 'last', caption: 'The same tree, iteratively. Now the badges are depths handed DOWN, not answers handed up — the opposite information flow.' },
       heading: 'Nothing counts on the way down',
       html: `
         <p>Beginners expect a counter that increments as you descend. In the recursive version there

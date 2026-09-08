@@ -6,6 +6,8 @@ const props = defineProps({
   lay: { type: Object, required: true },
   frame: { type: Object, default: null },
   badgeLabel: { type: String, default: 'Value' },
+  // Only problems where context flows DOWN set these; everything else ignores them.
+  carryLabel: { type: String, default: 'Carried in' },
 });
 
 // The viewBox has to leave room for things that live outside the node bounds:
@@ -18,6 +20,11 @@ const box = computed(() => {
 
 const returns = computed(() => (props.frame && props.frame.returns) || {});
 const path = computed(() => (props.frame && props.frame.path) || []);
+
+// carried = the value handed DOWN into that node's call. marks = a per-node
+// verdict. Both are opt-in: a frame that omits them renders exactly as before.
+const carried = computed(() => (props.frame && props.frame.carried) || {});
+const marks = computed(() => (props.frame && props.frame.marks) || {});
 
 /** A missing child still gets a real call. Drawing it is the base case made visible. */
 const ghost = computed(() => {
@@ -40,11 +47,17 @@ const band = computed(() => {
 
 const litEdge = (e) => path.value.includes(e.from) && path.value.includes(e.to);
 
-const nodeClass = (n) => ({
-  act: props.frame && props.frame.active === n.id,
-  path: path.value.includes(n.id) && !(props.frame && props.frame.active === n.id),
-  res: returns.value[n.id] !== undefined && !(props.frame && props.frame.active === n.id),
-});
+const nodeClass = (n) => {
+  const isActive = Boolean(props.frame && props.frame.active === n.id);
+  const mark = marks.value[n.id];
+  return {
+    act: isActive,
+    path: path.value.includes(n.id) && !isActive && !mark,
+    res: returns.value[n.id] !== undefined && !isActive && !mark,
+    good: mark === 'good' && !isActive,
+    bad: mark === 'bad' && !isActive,
+  };
+};
 </script>
 
 <template>
@@ -81,6 +94,11 @@ const nodeClass = (n) => ({
       <g v-for="n in lay.nodes" :key="'n' + n.id">
         <circle class="nodec" :class="nodeClass(n)" :cx="n.x" :cy="n.y" :r="24" />
         <text class="nodet" :x="n.x" :y="n.y">{{ n.val }}</text>
+        <g v-if="carried[n.id] !== undefined">
+          <title>{{ carryLabel }}: {{ carried[n.id] }}</title>
+          <rect class="badge-c" :x="n.x - 42" :y="n.y - 32" :width="30" height="19" rx="4" />
+          <text class="badge-ct" :x="n.x - 27" :y="n.y - 22">{{ carried[n.id] }}</text>
+        </g>
         <g v-if="returns[n.id] !== undefined">
           <title>{{ badgeLabel }}: {{ returns[n.id] }}</title>
           <circle class="badge-r" :cx="n.x + 22" :cy="n.y - 22" r="11" />

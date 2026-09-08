@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { problemBySlug } from '#content/index.js';
 
 const route = useRoute();
@@ -24,6 +25,12 @@ useSeoMeta({
   twitterImage: `${config.public.siteUrl}/og.png`,
   twitterCard: 'summary_large_image',
 });
+
+// One idea stays open. Everything else is one click away — the exemplars
+// (Red Blob, Ciechanowski) never run more than ~150-300 words without a visual,
+// and this page was running 1,289.
+const leadSection = computed(() => problem.essay[0]);
+const deeperSections = computed(() => problem.essay.slice(1));
 
 useHead({
   link: [{ rel: 'canonical', href: url }],
@@ -58,35 +65,24 @@ useHead({
         <a :href="problem.links.leetcode" target="_blank" rel="noopener">LeetCode ↗</a>
         <a :href="problem.links.neetcode" target="_blank" rel="noopener">NeetCode ↗</a>
       </p>
-      <p class="lede" v-html="problem.lede" />
+      <p class="lede short" v-html="problem.blurb" />
     </header>
-
-    <div class="statement">
-      <div>
-        <span class="k">Problem</span>
-        <p v-for="(para, i) in problem.statement" :key="i" v-html="para" />
-      </div>
-      <div>
-        <span class="k">Examples</span>
-        <div v-for="(ex, i) in problem.examples" :key="i" class="ex">
-          <b>{{ ex.input }}</b> → <span class="out">{{ ex.output }}</span>
-        </div>
-      </div>
-      <div>
-        <span class="k">Constraints</span>
-        <ul>
-          <li v-for="(c, i) in problem.constraints" :key="i">{{ c }}</li>
-        </ul>
-      </div>
-    </div>
 
     <AlgoTrace :problem="problem" />
 
-    <article class="essay">
-      <section v-for="(s, i) in problem.essay" :key="'e' + i">
-        <h2>{{ s.kicker }}</h2>
-        <h3>{{ s.heading }}</h3>
-        <div v-html="s.html" />
+    <article class="essay lead">
+      <section>
+        <h2>{{ leadSection.kicker }}</h2>
+        <h3>{{ leadSection.heading }}</h3>
+        <div v-html="leadSection.html" />
+        <TraceFigure
+          v-if="leadSection.figure"
+          :problem="problem"
+          :approach="leadSection.figure.approach"
+          :at="leadSection.figure.at"
+          :input="leadSection.figure.input"
+          :caption="leadSection.figure.caption"
+        />
       </section>
 
       <section>
@@ -109,36 +105,111 @@ useHead({
         </div>
         <p style="margin-top:16px" v-html="problem.comparison.footnote" />
       </section>
-
-      <section>
-        <h2>{{ problem.traps.kicker }}</h2>
-        <h3>{{ problem.traps.heading }}</h3>
-        <ol class="traps">
-          <li v-for="(t, i) in problem.traps.items" :key="i">
-            <b v-html="t.title" />
-            <p v-html="t.body" />
-          </li>
-        </ol>
-      </section>
-
-      <section>
-        <h2>{{ problem.next.kicker }}</h2>
-        <h3>{{ problem.next.heading }}</h3>
-        <p>{{ problem.next.intro }}</p>
-        <ul class="next">
-          <li v-for="n in problem.next.items" :key="n.num">
-            <span class="num">{{ n.num }}</span>
-            <b>{{ n.title }}</b>
-            <span v-html="n.note" />
-          </li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>{{ problem.interview.kicker }}</h2>
-        <h3>{{ problem.interview.heading }}</h3>
-        <div v-html="problem.interview.html" />
-      </section>
     </article>
+
+    <section v-if="problem.video" class="videoblock">
+      <h2>Watch it explained</h2>
+      <p class="videonote">
+        The trace above shows <em>what</em> happens, step by step. For someone talking you
+        through the reasoning, {{ problem.video.channel }}'s walkthrough is the best there is.
+      </p>
+      <div class="videoframe">
+        <iframe
+          :src="`https://www.youtube-nocookie.com/embed/${problem.video.youtubeId}`"
+          :title="problem.video.title"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+        />
+      </div>
+      <p class="videocredit">
+        <a :href="`https://www.youtube.com/watch?v=${problem.video.youtubeId}`" target="_blank" rel="noopener">
+          {{ problem.video.title }}
+        </a>
+        — by {{ problem.video.channel }}
+      </p>
+    </section>
+
+    <div class="deeper">
+      <h2 class="deeper-head">Go deeper</h2>
+
+      <details v-for="(sec, i) in deeperSections" :key="'d' + i" class="fold">
+        <summary>{{ sec.heading }}</summary>
+        <div class="foldbody essay">
+          <section>
+            <div v-html="sec.html" />
+            <TraceFigure
+              v-if="sec.figure"
+              :problem="problem"
+              :approach="sec.figure.approach"
+              :at="sec.figure.at"
+              :input="sec.figure.input"
+              :caption="sec.figure.caption"
+            />
+          </section>
+        </div>
+      </details>
+
+      <details class="fold">
+        <summary>{{ problem.traps.heading }}</summary>
+        <div class="foldbody essay">
+          <section>
+            <ol class="traps">
+              <li v-for="(t, i) in problem.traps.items" :key="i">
+                <b v-html="t.title" />
+                <p v-html="t.body" />
+              </li>
+            </ol>
+          </section>
+        </div>
+      </details>
+
+      <details class="fold">
+        <summary>{{ problem.next.heading }}</summary>
+        <div class="foldbody essay">
+          <section>
+            <p>{{ problem.next.intro }}</p>
+            <ul class="next">
+              <li v-for="n in problem.next.items" :key="n.num">
+                <span class="num">{{ n.num }}</span>
+                <b>{{ n.title }}</b>
+                <span v-html="n.note" />
+              </li>
+            </ul>
+          </section>
+        </div>
+      </details>
+
+      <details class="fold">
+        <summary>{{ problem.interview.heading }}</summary>
+        <div class="foldbody essay"><section><div v-html="problem.interview.html" /></section></div>
+      </details>
+
+      <details class="fold">
+        <summary>Problem statement, examples and constraints</summary>
+        <div class="foldbody">
+    <div class="statement">
+      <div>
+        <span class="k">Problem</span>
+        <p v-for="(para, i) in problem.statement" :key="i" v-html="para" />
+      </div>
+      <div>
+        <span class="k">Examples</span>
+        <div v-for="(ex, i) in problem.examples" :key="i" class="ex">
+          <b>{{ ex.input }}</b> → <span class="out">{{ ex.output }}</span>
+        </div>
+      </div>
+      <div>
+        <span class="k">Constraints</span>
+        <ul>
+          <li v-for="(c, i) in problem.constraints" :key="i">{{ c }}</li>
+        </ul>
+      </div>
+    </div>
+        </div>
+      </details>
+    </div>
+
   </div>
 </template>

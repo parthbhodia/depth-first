@@ -1,10 +1,16 @@
 <script setup>
 import { problems } from '#content/index.js';
+import { startHere } from '#content/roadmap.js';
 
 const config = useRuntimeConfig();
 const title = 'Depth First — step through the algorithms, don\'t just read them';
 const description =
   'Interactive, step-by-step traces of classic interview algorithms. Watch the call stack grow, the tree fill in, and the code light up one line at a time.';
+
+// One obvious next click. Without this the page is a list, and a list makes
+// every entry look equally reasonable to start with — which is the same as
+// no direction at all.
+const first = startHere();
 
 useSeoMeta({
   title,
@@ -31,6 +37,16 @@ useSeoMeta({
       </p>
     </section>
 
+    <div v-if="first" class="starthere">
+      <span class="sh-k">Start here</span>
+      <p class="sh-t">
+        <b>{{ first.number }} · {{ first.title }}</b> — {{ first.blurb }}
+      </p>
+      <NuxtLink class="btn primary" :to="`/problems/${first.slug}`">Run the trace →</NuxtLink>
+    </div>
+
+    <RoadmapGraph />
+
     <div class="index-head">
       <h2>Problems</h2>
       <span>{{ problems.length }} traced</span>
@@ -53,8 +69,9 @@ useSeoMeta({
     </ul>
 
     <p class="soon">
-      More on the way — the tree patterns first (110, 543, 111, 102, 199), then the
-      graph and dynamic-programming families. Each one is a trace, not a wall of text.
+      The map above is the plan, not a wishlist — each box gets the same treatment as the two that
+      are live: a running trace first, the prose second. Trees next (110, 543, 111), then the rest
+      of the 1-D dynamic programming row.
     </p>
   </div>
 </template>
