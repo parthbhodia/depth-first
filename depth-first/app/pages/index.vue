@@ -55,7 +55,7 @@ useSeoMeta({
     <ul class="plist">
       <li v-for="p in problems" :key="p.slug">
         <NuxtLink :to="`/problems/${p.slug}`">
-          <span class="pnum">{{ p.number }}</span>
+          <span class="pnum" :class="{ sys: !p.number }">{{ p.number || 'SYS' }}</span>
           <span>
             <span class="ptitle">{{ p.title }}</span>
             <p class="pblurb">{{ p.blurb }}</p>

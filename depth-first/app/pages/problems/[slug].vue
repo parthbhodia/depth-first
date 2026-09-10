@@ -11,8 +11,10 @@ if (!problem) {
 }
 
 const url = `${config.public.siteUrl}/problems/${problem.slug}`;
-const title = `${problem.title} (LeetCode ${problem.number}) — visual walkthrough`;
-const description = `${problem.blurb} Step through recursive DFS, iterative DFS and BFS with a live call stack, tree and code trace.`;
+const title = problem.number
+  ? `${problem.title} (LeetCode ${problem.number}) — visual walkthrough`
+  : `${problem.title} — a visual walkthrough`;
+const description = `${problem.blurb} Step through it one stage at a time, with a live diagram and code trace.`;
 
 useSeoMeta({
   title,
@@ -54,7 +56,7 @@ useHead({
 <template>
   <div class="wrap page">
     <nav class="crumbs" aria-label="Breadcrumb">
-      <NuxtLink to="/">Problems</NuxtLink> / LeetCode {{ problem.number }}
+      <NuxtLink to="/">Problems</NuxtLink> / {{ problem.number ? `LeetCode ${problem.number}` : problem.kicker }}
     </nav>
 
     <header class="problem-head">
@@ -62,8 +64,8 @@ useHead({
       <p class="meta-row">
         <span class="diff" :class="problem.difficulty.toLowerCase()">{{ problem.difficulty }}</span>
         <span>{{ problem.pattern }}</span>
-        <a :href="problem.links.leetcode" target="_blank" rel="noopener">LeetCode ↗</a>
-        <a :href="problem.links.neetcode" target="_blank" rel="noopener">NeetCode ↗</a>
+        <a :href="problem.links.leetcode" target="_blank" rel="noopener">{{ problem.linkLabels?.leetcode || 'LeetCode' }} ↗</a>
+        <a :href="problem.links.neetcode" target="_blank" rel="noopener">{{ problem.linkLabels?.neetcode || 'NeetCode' }} ↗</a>
       </p>
       <p class="lede short" v-html="problem.blurb" />
     </header>

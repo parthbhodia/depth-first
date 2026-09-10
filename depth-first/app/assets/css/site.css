@@ -144,6 +144,7 @@
   font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700;
   color: var(--ink-3);
 }
+.pnum.sys { font-size: 10.5px; letter-spacing: .1em; color: var(--brand-ink); }
 .ptitle { font-size: 19px; font-weight: 700; font-stretch: 106%; letter-spacing: -.01em; }
 .pblurb {
   font-family: "Newsreader", Georgia, serif; font-size: 16px; color: var(--ink-2);
@@ -160,6 +161,7 @@
 }
 .diff.easy { color: var(--done); }
 .diff.medium { color: var(--active); }
+.diff.core { color: var(--brand-ink); }
 .diff.hard { color: #B3261E; }
 :root[data-theme="dark"] .diff.hard,
 :root:not([data-theme="light"]) .diff.hard { color: #F2836F; }

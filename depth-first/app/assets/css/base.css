@@ -268,6 +268,64 @@ svg.tree { max-width: 100%; height: auto; display: block; }
 .dot.c { color: var(--brand); background: var(--brand-soft); border-radius: 2px; }
 .dot.x { color: var(--ink-3); background: var(--panel-2); }
 
+/* ---------- consistent-hashing ring ---------- */
+
+.ring-hold { flex-direction: column; gap: 10px; }
+svg.ring { max-width: 420px; width: 100%; height: auto; display: block; }
+
+.ring-track { fill: none; stroke: var(--rule-2); stroke-width: 2; }
+.ring-arc { fill: var(--brand); opacity: .1; stroke: var(--brand); stroke-width: 1; stroke-opacity: .35; }
+.sweep { stroke: var(--active); stroke-width: 2; stroke-dasharray: 4 4; }
+.spoke { stroke: var(--rule-2); stroke-width: 1; opacity: .5; }
+.spoke.moved { stroke: var(--active); stroke-width: 1.8; opacity: .9; }
+
+/* server colours: 0 oscar(blue) 1 grid(amber) 2 helm(green) 3 echo(new/violet) */
+.serverd { stroke: var(--paper); stroke-width: 2; }
+.serverd.sv-0 { fill: var(--brand); }
+.serverd.sv-1 { fill: var(--active); }
+.serverd.sv-2 { fill: var(--done); }
+.serverd.sv-3 { fill: #7A3FB0; }
+.serverd.act { stroke: var(--ink); stroke-width: 2.5; }
+.serverd.added { animation: pop .4s ease; }
+@keyframes pop { from { r: 2; } }
+.servert {
+  font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700;
+  fill: var(--on-brand); text-anchor: middle; dominant-baseline: central;
+}
+.serverlabel {
+  font-family: "JetBrains Mono", monospace; font-size: 11px; fill: var(--ink-2);
+  text-anchor: middle; dominant-baseline: central;
+}
+
+.keyd { fill: var(--panel); stroke: var(--ink-3); stroke-width: 1.4; }
+.keyd.act { stroke: var(--active); stroke-width: 2.4; fill: var(--active-soft); }
+.keyd.moved { fill: var(--active-soft); stroke: var(--active); stroke-width: 2; }
+.keyd.homeless { stroke-dasharray: 3 2; }
+
+/* modulo buckets */
+.buckets { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 8px; width: 100%; padding: 6px 2px; }
+.bucket { border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); min-height: 190px; display: flex; flex-direction: column; }
+.bucket.hot { border-color: #7A3FB0; box-shadow: 0 0 0 2px rgba(122,63,176,.18); }
+.bhead {
+  font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 700; color: var(--ink);
+  padding: 7px 9px; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 2px;
+}
+.bform { font-size: 9.5px; font-weight: 500; color: var(--ink-3); letter-spacing: .04em; }
+.bkeys { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; align-content: flex-start; }
+.kchip {
+  font-family: "JetBrains Mono", monospace; font-size: 10.5px; padding: 3px 6px; border-radius: 3px;
+  background: var(--panel-2); color: var(--ink-2); border: 1px solid transparent;
+}
+.kchip.moved { background: var(--active-soft); color: var(--active); border-color: var(--active); font-weight: 700; }
+.kchip.act { border-color: var(--brand); color: var(--brand-ink); }
+.bempty { color: var(--ink-3); font-family: "JetBrains Mono", monospace; font-size: 12px; }
+
+/* ring legend dots */
+.dot.ring-os { color: var(--brand); background: var(--brand); border-color: var(--brand); }
+.dot.ring-gr { color: var(--active); background: var(--active); border-color: var(--active); }
+.dot.ring-he { color: var(--done); background: var(--done); border-color: var(--done); }
+.dot.ring-ec { color: #7A3FB0; background: #7A3FB0; border-color: #7A3FB0; }
+
 /* ---------- side readouts ---------- */
 
 .readouts {

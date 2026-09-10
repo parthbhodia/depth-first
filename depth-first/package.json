@@ -11,6 +11,7 @@
   },
   "version": "0.1.0",
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "nuxt": "^4.5.2"
   },
   "description": "Interactive, step-by-step traces of interview algorithms.",

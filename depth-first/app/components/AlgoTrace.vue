@@ -16,6 +16,7 @@ const treeText = ref(props.problem.defaultInput);
 
 const approach = computed(() => props.problem.approachById(approachId.value));
 const isCallTree = computed(() => props.problem.stage === 'call-tree');
+const isRing = computed(() => props.problem.stage === 'ring');
 
 // Each problem owns how its input string becomes a value.
 const input = computed(() => props.problem.parseInput(treeText.value));
@@ -27,9 +28,13 @@ const framesRef = computed(() => built.value.frames);
 
 // A binary tree is the INPUT and is known up front. A call tree is the
 // EXECUTION — laid out once over every call the run will make, then revealed.
-const lay = computed(() => (isCallTree.value
-  ? layoutCallTree(built.value.nodes || [], CALL_LAYOUT)
-  : layout(input.value, LAYOUT)));
+// The ring canvas reads the frame directly and needs no precomputed layout.
+const lay = computed(() => {
+  if (isRing.value) return {};
+  return isCallTree.value
+    ? layoutCallTree(built.value.nodes || [], CALL_LAYOUT)
+    : layout(input.value, LAYOUT);
+});
 
 const {
   supported: voiceSupported,
@@ -101,7 +106,10 @@ const usesCarry = computed(() => Boolean(props.problem.carryLabels));
 
 // The note beside the tabs explains the number drawn on the nodes. Where
 // context flows down, the carried value is the one worth explaining.
-const tabNote = computed(() => (usesCarry.value ? carryLabel.value : badgeLabel.value));
+const tabNote = computed(() => {
+  if (isRing.value) return '';
+  return usesCarry.value ? carryLabel.value : badgeLabel.value;
+});
 
 const panelTitle = computed(() => {
   if (approach.value.stackPanel === 'none') return 'Call stack';
@@ -121,6 +129,18 @@ const emptyPanelNote = computed(() =>
     : 'empty');
 
 const legend = computed(() => {
+  if (isRing.value) {
+    if (approachId.value === 'modulo') {
+      return [{ cls: 'x', text: 'moved when a server joins' }];
+    }
+    return [
+      { cls: 'ring-os', text: 'oscar' },
+      { cls: 'ring-gr', text: 'grid' },
+      { cls: 'ring-he', text: 'helm' },
+      { cls: 'ring-ec', text: 'echo (added)' },
+      { cls: 'x', text: 'key moved' },
+    ];
+  }
   if (!isCallTree.value) {
     if (usesCarry.value) {
       return [
@@ -356,7 +376,7 @@ onBeforeUnmount(() => {
 
       <div class="pane pane-stage" :class="{ 'tour-focus': focusZone === 'stage' }">
         <div class="pane-head">
-          <span>{{ isCallTree ? 'Call tree' : 'Tree' }}</span>
+          <span>{{ isRing ? (frame && frame.view === 'buckets' ? 'Servers' : 'Hash ring') : (isCallTree ? 'Call tree' : 'Tree') }}</span>
           <span class="tab-note">{{ tabNote }}</span>
         </div>
 
@@ -367,7 +387,8 @@ onBeforeUnmount(() => {
             <em>{{ frames.length }} steps · or press space</em>
           </button>
 
-          <CallTreeCanvas v-if="isCallTree" :lay="lay" :frame="frame" />
+          <RingCanvas v-if="isRing" :frame="frame" />
+          <CallTreeCanvas v-else-if="isCallTree" :lay="lay" :frame="frame" />
           <TreeCanvas v-else :lay="lay" :frame="frame" :badge-label="badgeLabel" :carry-label="carryLabel" />
 
           <DpTable v-if="isCallTree" :frame="frame" :class="{ 'tour-focus': focusZone === 'dp' }" />

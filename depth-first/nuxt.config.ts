@@ -4,6 +4,10 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
 
+  // Vercel Web Analytics — injects the client script only in production on
+  // Vercel; a no-op locally and on other hosts.
+  modules: ['@vercel/analytics/nuxt'],
+
   css: ['~/assets/css/base.css', '~/assets/css/site.css'],
 
   alias: {

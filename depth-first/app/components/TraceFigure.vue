@@ -38,20 +38,28 @@ const frame = computed(() => {
 });
 
 const isCallTree = computed(() => props.problem.stage === 'call-tree');
+const isRing = computed(() => props.problem.stage === 'ring');
 
-const lay = computed(() => (isCallTree.value
-  ? layoutCallTree(built.value.nodes || [], CALL_LAYOUT)
-  : layout(value.value, LAYOUT)));
+const lay = computed(() => {
+  if (isRing.value) return {};
+  return isCallTree.value
+    ? layoutCallTree(built.value.nodes || [], CALL_LAYOUT)
+    : layout(value.value, LAYOUT);
+});
 
 const badgeLabel = computed(
   () => props.problem.badgeLabels?.[props.approach] || 'Value'
+);
+const carryLabel = computed(
+  () => props.problem.carryLabels?.[props.approach] || 'Carried in'
 );
 </script>
 
 <template>
   <figure class="tracefig">
     <div class="tracefig-canvas">
-      <CallTreeCanvas v-if="isCallTree" :lay="lay" :frame="frame" compact />
+      <RingCanvas v-if="isRing" :frame="frame" />
+      <CallTreeCanvas v-else-if="isCallTree" :lay="lay" :frame="frame" compact />
       <TreeCanvas v-else :lay="lay" :frame="frame" :badge-label="badgeLabel" :carry-label="carryLabel" />
     </div>
     <figcaption v-if="caption">{{ caption }}</figcaption>
