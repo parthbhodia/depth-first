@@ -16,6 +16,9 @@ const memoEntries = computed(() => {
 
 const probe = computed(() => (props.frame && props.frame.memoProbe) || null);
 const cells = computed(() => (props.frame && props.frame.table) || null);
+// Problems whose answer is a collection (subsets, permutations, combinations)
+// fill this instead of a memo: the list growing IS half the explanation.
+const collected = computed(() => (props.frame && props.frame.collected) || null);
 const focus = computed(() => (props.frame && props.frame.tableFocus));
 const deps = computed(() => (props.frame && props.frame.tableDeps) || []);
 
@@ -33,7 +36,7 @@ const cellClass = (c) => ({
 </script>
 
 <template>
-  <div v-if="memoEntries || cells" class="dp">
+  <div v-if="memoEntries || cells || collected" class="dp">
     <!-- Top-down: the memo, filling from the bottom of the recursion upward. -->
     <div v-if="memoEntries" class="dp-row">
       <span class="dp-label">memo</span>
@@ -53,6 +56,20 @@ const cellClass = (c) => ({
           v-if="probe && !probe.hit && !probe.wrote"
           class="dp-chip miss"
         ><b>{{ probe.key }}</b>?</span>
+      </div>
+    </div>
+
+    <!-- Collections: res filling up, newest entry flashing as it lands. -->
+    <div v-if="collected" class="dp-row">
+      <span class="dp-label">{{ collected.label }}</span>
+      <div class="dp-cells">
+        <span v-if="!collected.items.length" class="dp-empty">empty</span>
+        <span
+          v-for="(item, i) in collected.items"
+          :key="'g' + i"
+          class="dp-chip out"
+          :class="{ wrote: collected.justAdded === i }"
+        >{{ item }}</span>
       </div>
     </div>
 

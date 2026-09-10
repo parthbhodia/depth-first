@@ -334,6 +334,8 @@ svg.calltree { display: block; max-width: none; }
   background: var(--active-soft); color: var(--active);
 }
 .dp-chip.miss b { color: var(--active); }
+/* Collected results have no key, so they lose the "key:" affordance. */
+.dp-chip.out { gap: 0; }
 
 .dp-cell {
   display: inline-flex; flex-direction: column; align-items: center;

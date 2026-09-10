@@ -22,13 +22,21 @@ for (const problem of problems) {
     const expected = problem.reference(input);
 
     for (const approach of problem.approaches) {
-      const { frames, answer, nodes } = approach.build(input);
+      const built = approach.build(input);
+      const { frames, answer, nodes } = built;
       const final = frames[frames.length - 1];
 
       if (!frames.length) { fail(`${approach.id} on ${raw}: no frames`); continue; }
       if (answer !== expected) fail(`${approach.id} on ${raw}: returned ${answer}, expected ${expected}`);
       if (final.result !== expected) fail(`${approach.id} on ${raw}: final frame result ${final.result}, expected ${expected}`);
       if (!final.caption) fail(`${approach.id} on ${raw}: final frame has no caption`);
+
+      // Where the answer is a collection, the scalar above only checks its
+      // size. Problems can supply a deeper check of what was actually built.
+      if (problem.verify) {
+        const msg = problem.verify(input, built);
+        if (msg) fail(`${approach.id} on ${raw}: ${msg}`);
+      }
 
       // Anchors must land on a real line in every language.
       for (const lang of languages) {

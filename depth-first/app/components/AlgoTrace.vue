@@ -32,7 +32,7 @@ const framesRef = computed(() => built.value.frames);
 const lay = computed(() => {
   if (isRing.value) return {};
   return isCallTree.value
-    ? layoutCallTree(built.value.nodes || [], CALL_LAYOUT)
+    ? layoutCallTree(built.value.nodes || [], { ...CALL_LAYOUT, ...(props.problem.callLayout || {}) })
     : layout(input.value, LAYOUT);
 });
 
@@ -407,7 +407,12 @@ onBeforeUnmount(() => {
                 :key="f.key || i"
                 class="fr"
                 :class="{ top: isTop(i), nul: f.isNull }"
-              >{{ f.label }}</div>
+              >
+                <span class="fr-lbl">{{ f.label }}</span>
+                <span v-if="f.locals" class="fr-locals">
+                  <i v-for="l in f.locals" :key="l.name">{{ l.name }}<b>{{ l.value }}</b></i>
+                </span>
+              </div>
               <p v-if="!panelItems.length" class="empty-note">{{ emptyPanelNote }}</p>
             </div>
           </div>

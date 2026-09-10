@@ -2,6 +2,7 @@ import maxDepthBinaryTree from './problems/maximum-depth-of-binary-tree/index.js
 import countGoodNodes from './problems/count-good-nodes-in-binary-tree/index.js';
 import climbingStairs from './problems/climbing-stairs/index.js';
 import consistentHashing from './problems/consistent-hashing/index.js';
+import subsets from './problems/subsets/index.js';
 
 /**
  * The site's problem registry.
@@ -19,8 +20,10 @@ import consistentHashing from './problems/consistent-hashing/index.js';
  *   parseInput   (text) => the value passed to approach.build()
  *   reference    (input) => the correct answer, for the check script
  *   checkInputs  input strings to verify against
+ *   verify       (input, built) => error string | null — optional deep check
+ *                for problems whose answer is a collection, not a number
  */
-export const problems = [maxDepthBinaryTree, countGoodNodes, climbingStairs, consistentHashing];
+export const problems = [maxDepthBinaryTree, countGoodNodes, climbingStairs, subsets, consistentHashing];
 
 export const problemBySlug = (slug) => problems.find((p) => p.slug === slug) || null;
 
