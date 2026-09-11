@@ -9,11 +9,10 @@
  *   callStack  — each frame carries its OWN index and i, because the whole
  *                idea people miss is that i is frozen per frame, not global.
  *
- *   binary  — include/exclude, the picture to understand it by. A perfect
- *             binary tree, answers only at leaves, which is where the 2^n
- *             count becomes literally visible. First tab.
- *   loop    — the canonical interview form. One node per call, answers at
- *             every node; the one that grows into 90, 39 and 77.
+ *   loop    — the canonical form, first tab. One node per call and every
+ *             path is an answer: record on arrival, no stop condition.
+ *   binary  — include/exclude. A perfect binary tree, answers only at the
+ *             leaves (so Q1 needs a check), where 2^n becomes countable.
  *   bitmask — no recursion at all; the bits ARE the include/exclude decisions.
  */
 
@@ -613,29 +612,13 @@ function bitmaskFrames(nums) {
 
 export const approaches = [
   {
-    id: 'binary',
-    name: 'Include / exclude',
-    tagline: 'One question per number: in, or out? The picture to understand it by.',
-    watchFor:
-      'Watch the bottom row: every leaf is one subset and there are exactly 2ⁿ of them. And watch curr.pop() between the two branches — that one line is what lets a single list walk every path.',
-    idea:
-      'Ask one question per number: in, or out? That draws a tree with one level per number, and the answers sit at the bottom — exactly 2ⁿ leaves. '
-      + 'The two comments in the code are the whole design. Q1: the answer is complete when every number has been decided. Q2: the choices are take it, or skip it. It is the easiest picture to understand, and the one most explanations draw.',
-    time: 'O(n · 2ⁿ)',
-    space: 'O(n)',
-    spaceNote: 'An n-deep stack. The tree has 2ⁿ⁺¹ − 1 nodes but only 2ⁿ of them produce anything.',
-    stackPanel: 'call',
-    code: binaryCode,
-    build: binaryFrames,
-  },
-  {
     id: 'loop',
-    name: 'Loop over the rest',
-    tagline: 'The interview form: choose, explore, un-choose — and it generalises.',
+    name: 'Backtracking',
+    tagline: 'Choose, explore, un-choose — and every path is an answer.',
     watchFor:
       'Watch curr in the State panel, and watch i in each stack frame. curr returns to exactly what it was before every choice; i picks up exactly where it left off.',
     idea:
-      'Same two questions, different answers. Q1: every path is a complete answer, so record on arrival — there is no separate stop. Q2: the choices are everything to the right of index, which is what stops [1,3] and [3,1] both being generated. '
+      'Two questions. Q1 — complete answer? Always: every path is a valid subset, so record it the moment you arrive. No length check, no separate stop. Q2 — what choices do I have? Everything to the right of index, which is what stops [1,3] and [3,1] both being generated. '
       + 'Keep one shared list: add a number, explore everything that can follow it, then pop it back off so the next choice starts clean. This is the form to write in an interview — Subsets II, Combination Sum and Combinations are all edits to it.',
     time: 'O(n · 2ⁿ)',
     space: 'O(n)',
@@ -643,6 +626,22 @@ export const approaches = [
     stackPanel: 'call',
     code: loopCode,
     build: loopFrames,
+  },
+  {
+    id: 'binary',
+    name: 'Include / exclude',
+    tagline: 'One question per number: in, or out? Answers only at the leaves.',
+    watchFor:
+      'Watch the bottom row: every leaf is one subset and there are exactly 2ⁿ of them. And watch curr.pop() between the two branches — that one line is what lets a single list walk every path.',
+    idea:
+      'The same answers, drawn the way the warm-up was: ask one question per number — in, or out? — so the tree has one level per number and the answers sit only at the bottom, exactly 2ⁿ leaves. '
+      + 'Because answers live at the leaves, Q1 needs a check here: the answer is complete once every number has been decided. Q2 is two choices: take it, or skip it. It is the picture most explanations draw, and the one that makes the 2ⁿ countable.',
+    time: 'O(n · 2ⁿ)',
+    space: 'O(n)',
+    spaceNote: 'An n-deep stack. The tree has 2ⁿ⁺¹ − 1 nodes but only 2ⁿ of them produce anything.',
+    stackPanel: 'call',
+    code: binaryCode,
+    build: binaryFrames,
   },
   {
     id: 'bitmask',

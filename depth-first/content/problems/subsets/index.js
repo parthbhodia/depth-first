@@ -83,7 +83,7 @@ export default {
     'The cleanest place to watch choose / explore / un-choose, and the one problem where the recursion tree literally is the answer.',
 
   lede:
-    'Most recursion explainers stop at an analogy. This one shows the actual call stack: every frame with its own <code>i</code>, one shared <code>curr</code> that grows and un-grows, and <code>res</code> filling as you watch. The gap people describe as <em>"I understand recursion but I can\'t use it"</em> lives exactly here.',
+    'Most recursion explainers stop at an analogy. This one shows the actual call stack: every frame with its own <code>index</code> and <code>i</code>, one shared <code>curr</code> that grows and un-grows, and <code>res</code> filling as you watch. The gap people describe as <em>"I understand recursion but I can\'t use it"</em> lives exactly here.',
 
   statement: [
     'Given an integer array <code>nums</code> of <strong>unique</strong> elements, return <em>all possible subsets (the power set)</em>.',
@@ -113,22 +113,22 @@ export default {
   badgeLabels: { loop: 'Subsets below', binary: 'Subsets below', bitmask: 'Value' },
 
   tour: [
-    { focus: 'tabs', approach: 'binary',
-      text: 'Three tabs, one answer. The first is the picture to understand it by; the second is the form to write in an interview; the third shows what is left when you drop the recursion.' },
-    { focus: 'code', approach: 'binary',
-      text: 'Read the two comments first. Q1: is the answer complete? Q2: what choices do I have? Everything else in the function is those two answers, plus a pop.' },
-    { focus: 'stage', approach: 'binary', play: true,
-      text: 'Play it. Every level is one number, every leaf is one subset — and the bottom row is 2 to the n wide, so the complexity is something you can count rather than derive.' },
-    { focus: 'stack', approach: 'binary', at: { anchor: 'exclude' },
-      text: 'The pop. curr loses its last number, and the same frame goes down the other branch without it. That single line is what lets one shared list explore every path.' },
+    { focus: 'tabs', approach: 'loop',
+      text: 'Three tabs, one answer. The first is the form to write in an interview; the second draws the same answers with a yes/no per number; the third shows what is left when you drop the recursion.' },
     { focus: 'code', approach: 'loop',
-      text: 'Now the interview form. Same two comments, different answers: every path is complete, so it records on arrival, and the choices are everything to the right of index.' },
+      text: 'Read the two comments first. Q1: is the answer complete? Here, always — every path is a subset, so record on arrival. Q2: what choices do I have? Everything to the right of index. The rest of the function is a pop.' },
+    { focus: 'stage', approach: 'loop', play: true,
+      text: 'Play it. Watch res in the strip under the tree — it gains an entry at every single node, not just at the bottom. No length check anywhere.' },
+    { focus: 'stack', approach: 'loop', at: { anchor: 'unchoose' },
+      text: 'The pop. curr loses its last number, and the same frame moves on to the next choice with i intact. That single line is what lets one shared list explore every path.' },
     { focus: 'stack', approach: 'loop', at: { anchor: 'record' },
       text: 'Each frame owns an index and an i. Read the i column top to bottom and you get the current path — curr is really just a copy of that column.' },
+    { focus: 'stage', approach: 'binary', play: true,
+      text: 'Same answers, framed as a yes/no per number. Answers now appear only at the leaves — which is why this form needs the "every number decided?" check — and the bottom row is 2 to the n wide.' },
     { focus: 'stage', approach: 'bitmask', play: true,
       text: 'Drop the recursion entirely. Every subset is an n-bit number, so counting to 2 to the n minus 1 and reading the bits gives the same set with no stack at all.' },
     { focus: null, approach: 'loop', at: 'last',
-      text: 'Write the second tab in an interview. It becomes Subsets II, Combination Sum and Permutations by changing a line — and it is the one that can prune.' },
+      text: 'Write the first tab in an interview. It becomes Subsets II, Combination Sum and Permutations by changing a line — and it is the one that can prune.' },
   ],
 
   /**
@@ -141,7 +141,7 @@ export default {
     heading: 'It is not a new algorithm. It is DFS on a tree you build as you go.',
     credit: 'Sequence and warm-up after <a href="https://www.youtube.com/watch?v=Ak-fxEwAR14" target="_blank" rel="noopener">AlgoMonster\'s backtracking tutorial</a>; every picture is a real trace.',
     warmup,
-    finish: { approach: 'binary', play: true, label: 'Play the trace' },
+    finish: { approach: 'loop', play: true, label: 'Play the trace' },
     steps: [
       {
         title: 'A problem loops cannot solve',
@@ -244,45 +244,50 @@ for first in ["A", "B"]:
       {
         title: 'Now Subsets: the same two questions',
         html: `
-          <p>Subsets is the warm-up with different answers. Tab 1 below is that form, and the
-          comments in its code are the same Q1 and Q2.</p>
-          <p>Tab 2 answers Q1 differently again — every path is complete, so it records on arrival
-          and the choices are everything to the right of <code>index</code>. That is the form to
-          write in an interview.</p>`,
+          <p>Subsets is the warm-up with different answers — and in one way it is simpler. In the
+          warm-up only full-length strings count, so Q1 needed a length check. In Subsets
+          <em>every</em> path is a valid subset, so Q1's answer is "always": record the moment you
+          arrive, and there is no check and no stop.</p>
+          <p>Tab 1 below is that form; the comments in its code are the same Q1 and Q2. Tab 2
+          draws the same answers the warm-up's way, a yes/no per number with answers only at the
+          leaves, if you prefer that picture.</p>`,
         questions: [
           { q: 'When do I have a complete answer?',
-            a: 'When every number has been decided: <code>i == len(nums)</code>. Record and return — exactly like the warm-up.' },
+            a: 'Always. Every path is a valid subset, so record it on arrival — no length check, no separate stop. When <code>index</code> reaches the end, the loop simply has nothing left to offer.' },
           { q: 'What choices can I make from here?',
-            a: 'Two: take <code>nums[i]</code>, or skip it. Different choices, same skeleton.' },
+            a: 'Everything to the right of the last number taken: <code>nums[index]</code>, <code>nums[index + 1]</code>, … Never look left, and no subset is ever made twice.' },
         ],
       },
       {
         title: 'The same three parts, for Subsets',
         html: `
-          <p>Same three parts. The only visible difference from the warm-up is that the two choices
-          are written out instead of looped over: take <code>nums[i]</code>, pop, then skip it.</p>
-          <p>Skipping changes nothing, so there is nothing to un-choose after it — the pop sits
-          between the branches instead of after each one.</p>`,
-        approach: 'binary',
+          <p>Same three parts. "Check if done" became "record on arrival", because there is nothing
+          to check — every path counts. The loop runs over what is left of the array instead of
+          over a fixed pair of letters. The pop is exactly the same.</p>
+          <p>That is the entire function. Every backtracking solution you will write has this
+          shape; only the two answers change.</p>`,
+        approach: 'loop',
         lang: 'python',
         parts: [
-          { label: 'Check if done', note: 'Q1 — every number decided: record, return', anchors: ['base', 'record'] },
-          { label: 'First choice: take it', note: 'Q2, branch one — choose, go deeper', anchors: ['include', 'recurseIn'] },
-          { label: 'Pop, then the other choice: skip it', note: 'the backtracking, then Q2, branch two', anchors: ['exclude', 'recurseEx'] },
+          { label: 'Record on arrival', note: 'Q1 — every path is complete, so there is nothing to check', anchors: ['record'] },
+          { label: 'Loop through the choices', note: 'Q2 — everything to the right of index; choose, go deeper', anchors: ['loop', 'choose', 'recurse'] },
+          { label: 'Pop after each one', note: 'the backtracking — back to before the choice', anchors: ['unchoose'] },
         ],
       },
       {
         title: 'Watch it run, then spot it everywhere',
         html: `
-          <p>Play tab 1 and read the stack beside the tree; the bottom row is <code>2ⁿ</code>
-          wide. Then the tell: "generate all…", "return every…", "all combinations of…", "all
-          possible…". When a problem asks for every way something can be built, draw the tree,
-          answer the two questions, write the three parts.</p>
+          <p>Play tab 1 and read the stack beside the tree: each frame owns its own <code>i</code>,
+          <code>curr</code> is one list every frame can see, and <code>res</code> gains an entry at
+          every node. Then the tell: "generate all…", "return every…", "all combinations of…",
+          "all possible…". When a problem asks for every way something can be built, draw the
+          tree, answer the two questions, write the three parts.</p>
           <p>Subsets II changes one line of Q2. Permutations changes Q2 and records at the leaves.
           Combination Sum adds a reason to stop early. The skeleton never changes.</p>`,
         jumps: [
-          { approach: 'binary', play: true, label: 'Play the trace' },
-          { approach: 'binary', at: { anchor: 'exclude' }, label: 'Step 10: the pop' },
+          { approach: 'loop', play: true, label: 'Play the trace' },
+          { approach: 'loop', at: { anchor: 'unchoose' }, label: 'Step 17: the pop' },
+          { approach: 'loop', at: 19, label: 'Step 20: pop the 2, then choose 3' },
         ],
       },
     ],
@@ -294,38 +299,14 @@ for first in ["A", "B"]:
   essay: [
     {
       kicker: 'The shape',
-      figure: { approach: 'binary', at: 'last', caption: 'Eight answers as a perfect binary tree. One leaf per subset — count the bottom row and the complexity is done.' },
-      heading: 'One question per number: in, or out?',
-      html: `
-        <p>
-          Each call looks at one number and asks one question: is it in, or out? Two branches
-          per level, one level per number, so the tree is strictly binary with depth
-          <code>n</code>. Answers appear only at the leaves, and there are exactly
-          <code>2ⁿ</code> of them. You do not derive the complexity — you count the bottom row.
-        </p>
-        <p>
-          The two comments in the code are the whole design. <em>Q1 — complete answer?</em> is
-          <code>i == len(nums)</code>: every number has been decided. <em>Q2 — what choices do
-          I have?</em> is two: take <code>nums[i]</code>, or skip it. Between the branches sits
-          <code>curr.pop()</code>, and that line is not tidy-up — it is what lets a single
-          shared list walk every path.
-        </p>
-        <p>
-          Watch the skip branch: the child carries the <em>same</em> path as its parent, because
-          leaving a number out changes nothing. That looks odd on screen and is exactly right —
-          it is the difference between "which number do I take next" and "is this number in".
-        </p>
-      `,
-    },
-    {
-      kicker: 'The interview form',
       figure: { approach: 'loop', at: 'last', caption: 'Every node is an answer. Eight nodes, eight subsets — the tree is not a diagram of the work, it is the output.' },
       heading: 'Choose, explore, un-choose',
       html: `
         <p>
-          The second tab answers the same two questions differently. Q1: every path is a
-          complete answer, so the record moves to the top of the function and there is no
-          separate stop. Q2: the choices are everything to the right of <code>index</code>.
+          The two comments in the code are the whole design. <em>Q1 — complete answer?</em>
+          Always: every path is a valid subset, so the record sits at the top of the function
+          and there is no check and no stop. <em>Q2 — what choices do I have?</em> Everything
+          to the right of <code>index</code>.
           Three lines do the work — <code>curr.append(nums[i])</code> is the choice, the
           recursive call is the exploration, and <code>curr.pop()</code> takes the choice back.
           <strong>A call must leave <code>curr</code> exactly as it found it.</strong>
@@ -351,7 +332,7 @@ for first in ["A", "B"]:
       heading: 'Two locals, and one of them never moves',
       html: `
         <p>
-          On the second tab, open the call stack panel and step. Every frame carries exactly two
+          Open the call stack panel and step. Every frame carries exactly two
           locals. <code>index</code> is set once by the caller and never reassigned for the life
           of that frame. <code>i</code> is created by the <code>for</code> statement, advances,
           and — this is the part worth seeing rather than being told — <strong>freezes</strong>
@@ -376,6 +357,32 @@ for first in ["A", "B"]:
       `,
     },
     {
+      kicker: 'The other picture',
+      figure: { approach: 'binary', at: 'last', caption: 'Eight answers as a perfect binary tree. One leaf per subset — count the bottom row and the complexity is done.' },
+      heading: 'One question per number: in, or out?',
+      html: `
+        <p>
+          The second tab draws the same answers the way the warm-up did. Each call looks at one number and asks one question: is it in, or out? Two branches
+          per level, one level per number, so the tree is strictly binary with depth
+          <code>n</code>. Answers appear only at the leaves, and there are exactly
+          <code>2ⁿ</code> of them. You do not derive the complexity — you count the bottom row.
+        </p>
+        <p>
+          Because the answers live only at the leaves, this form needs the check the first tab
+          does not: <em>Q1 — complete answer?</em> is <code>i == len(nums)</code>, every number
+          decided. <em>Q2 — what choices do
+          I have?</em> is two: take <code>nums[i]</code>, or skip it. Between the branches sits
+          <code>curr.pop()</code>, and that line is not tidy-up — it is what lets a single
+          shared list walk every path.
+        </p>
+        <p>
+          Watch the skip branch: the child carries the <em>same</em> path as its parent, because
+          leaving a number out changes nothing. That looks odd on screen and is exactly right —
+          it is the difference between "which number do I take next" and "is this number in".
+        </p>
+      `,
+    },
+    {
       kicker: 'Where the bitmask fits',
       heading: 'The tree, flattened into an integer',
       html: `
@@ -389,7 +396,7 @@ for first in ["A", "B"]:
         </p>
         <p>
           Worth knowing if you learned this elsewhere: the NeetCode walkthrough below teaches the
-          include/exclude shape, so it lines up with the first tab. Both forms are correct and
+          include/exclude shape, so it lines up with the second tab. Both forms are correct and
           both are common. The loop form is the one to have in muscle memory, because Subsets II,
           Combination Sum and Combinations are all edits to it.
         </p>
@@ -402,10 +409,10 @@ for first in ["A", "B"]:
     heading: 'Same 2ⁿ answers, three shapes',
     columns: ['Version', 'Tree shape', 'Where answers appear', 'Space', 'When you would write it'],
     rows: [
+      ['Backtracking (loop + index)', '2ⁿ nodes, variable branching', 'Every node', 'O(n) stack',
+        'Always, in an interview. Every path is an answer, so there is no check; it is the form that extends to Subsets II, Combination Sum and Permutations.'],
       ['Include / exclude', '2ⁿ⁺¹ − 1 nodes, strictly binary', 'Leaves only', 'O(n) stack',
-        'To understand it, and whenever the per-element decision genuinely is yes or no. The form most explanations draw.'],
-      ['Loop over the rest (backtracking with index)', '2ⁿ nodes, variable branching', 'Every node', 'O(n) stack',
-        'Always, in an interview. It is the form that extends to Subsets II, Combination Sum and Permutations.'],
+        'To understand it, and whenever the per-element decision genuinely is yes or no. Needs the "every number decided?" check because answers live only at the leaves.'],
       ['Bitmask', 'No tree', 'One per integer', 'O(1)',
         'Pure subsets of a small array, or when you need subsets as integers anyway (DP over bitmasks). Never when you need to prune.'],
     ],
