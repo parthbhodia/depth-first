@@ -164,7 +164,7 @@ function frames(n) {
 
   function dfs(parentId, depth) {
     const id = nextId++;
-    const label = path.length ? path.join('') : '""';
+    const label = path.length ? path.join('') : 'Empty';
     nodes.push({ id, parentId, key: `${depth}:${path.join('')}`, label, depth });
     const fr = { id, label, ch: '—' };
     stack.push(fr);

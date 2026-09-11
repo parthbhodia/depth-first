@@ -30,9 +30,12 @@ useSeoMeta({
 
 // The lesson hands off to the instrument: land on a frame, or play.
 const trace = ref(null);
+function scrollToTrace() {
+  document.getElementById('trace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function onJump(target) {
   trace.value?.jumpTo(target);
-  document.getElementById('trace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  scrollToTrace();
 }
 
 // One idea stays open. Everything else is one click away — the exemplars
@@ -77,7 +80,7 @@ useHead({
       <p class="lede short" v-html="problem.blurb" />
     </header>
 
-    <PatternLesson v-if="problem.lesson" :problem="problem" :lesson="problem.lesson" @jump="onJump" />
+    <PatternLesson v-if="problem.lesson" :problem="problem" :lesson="problem.lesson" @jump="onJump" @skip="scrollToTrace" />
 
     <AlgoTrace id="trace" ref="trace" :problem="problem" />
 

@@ -166,6 +166,9 @@ h1 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
   align-items: stretch;
+  /* Explicit: some engines shrink a single-column grid to half its parent on
+     narrow viewports, which halved the code and the tree on phones. */
+  width: 100%; min-width: 0;
 }
 @media (max-width: 860px) { .rig { grid-template-columns: minmax(0, 1fr); } }
 

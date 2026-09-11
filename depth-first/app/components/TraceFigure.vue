@@ -20,6 +20,7 @@ const props = defineProps({
   at: { type: [String, Number, Object], default: 'last' },
   input: { type: String, default: null },
   caption: { type: String, default: '' },
+  plain: { type: Boolean, default: false },
 });
 
 const approachObj = computed(() => props.problem.approachById(props.approach));
@@ -59,7 +60,7 @@ const carryLabel = computed(
   <figure class="tracefig">
     <div class="tracefig-canvas">
       <RingCanvas v-if="isRing" :frame="frame" />
-      <CallTreeCanvas v-else-if="isCallTree" :lay="lay" :frame="frame" compact />
+      <CallTreeCanvas v-else-if="isCallTree" :lay="lay" :frame="frame" :plain="plain" compact />
       <TreeCanvas v-else :lay="lay" :frame="frame" :badge-label="badgeLabel" :carry-label="carryLabel" />
     </div>
     <figcaption v-if="caption">{{ caption }}</figcaption>

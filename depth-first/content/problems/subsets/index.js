@@ -132,26 +132,25 @@ export default {
   ],
 
   /**
-   * Read before the instrument. The warm-up is AlgoMonster's: every string of
-   * A and B — a tree small enough to draw by hand and real enough to trace.
-   * Then Subsets, as the same two questions with different answers.
+   * Read before the instrument, one slide at a time. The warm-up is
+   * AlgoMonster's: every string of A and B — a tree small enough to draw by
+   * hand and real enough to trace. Then Subsets, as the same two questions
+   * with different answers. Short sentences: each step is one thought.
    */
   lesson: {
     kicker: 'Backtracking, from zero',
     heading: 'It is not a new algorithm. It is DFS on a tree you build as you go.',
     credit: 'Sequence and warm-up after <a href="https://www.youtube.com/watch?v=Ak-fxEwAR14" target="_blank" rel="noopener">AlgoMonster\'s backtracking tutorial</a>; every picture is a real trace.',
     warmup,
-    finish: { approach: 'loop', play: true, label: 'Play the trace' },
+    finish: { approach: 'loop', play: true, label: 'Play the Subsets trace' },
     steps: [
       {
         title: 'A problem loops cannot solve',
         html: `
-          <p>The warm-up: given <code>n</code>, list every string of length <code>n</code> made of
-          the letters A and B. For <code>n = 2</code>, two loops, one per position. For
-          <code>n = 10</code>, ten. Nobody can write a different program for every
-          <code>n</code>.</p>
-          <p>The depth of the looping has to follow the input — and "as deep as the input needs"
-          is exactly what recursion is for. Subsets hits the same wall: a loop nest per size.</p>`,
+          <p>Warm-up: given <code>n</code>, list every string of length <code>n</code> made of A
+          and B. For <code>n = 2</code>, two loops. For <code>n = 10</code>, ten. You cannot write
+          a new program for every <code>n</code>.</p>
+          <p>The depth of the looping has to follow the input. That is what recursion is for.</p>`,
         snippet: {
           lang: 'python',
           source: `# n = 2: two loops, one per position
@@ -166,61 +165,55 @@ for first in ["A", "B"]:
       {
         title: 'Draw the tree',
         html: `
-          <p>Start with an empty path. Two choices: add A, or add B. From <code>"A"</code>, the
-          same two choices again. Look at what appeared — a tree — and the answers AA, AB, BA, BB
-          are its leaves.</p>
-          <p>That changes the question. Not "how do I generate all the strings?" but "how do I
-          visit every leaf of this tree?"</p>`,
+          <p>Start empty. Two choices: add A, or add B. From <code>A</code>, the same two
+          choices again. A tree appears — and the four answers are its leaves.</p>
+          <p>So the question is not "how do I generate the strings?" It is "how do I visit
+          every leaf of this tree?"</p>`,
         figure: { problem: 'warmup', approach: 'dfs', at: 'last',
-          caption: 'Start empty. Add A or B; from each of those, add A or B again. The four answers are the leaves.' },
+          caption: 'Empty, then A or B, then A or B again. AA, AB, BA, BB are the leaves.' },
       },
       {
         title: 'It is just DFS',
         html: `
-          <p>You already know how to visit every node of a tree: depth-first, the same recursion as
-          Maximum Depth. The one twist: in a normal DFS the tree is given to you. Here it is
-          invisible — it does not exist until you build it, one choice at a time.</p>
-          <p>Press <b>Grow</b>. Each node appears the moment the DFS reaches it. The walk and the
-          building are the same act.</p>`,
+          <p>Visiting every node of a tree is depth-first search — the recursion you already
+          know from Maximum Depth. The twist: this tree is not given. It does not exist until you
+          build it, one choice at a time.</p>
+          <p>Press <b>Grow</b>. Each node appears the moment the DFS reaches it.</p>`,
         grow: { problem: 'warmup', approach: 'dfs' },
       },
       {
         title: 'What pop() actually does',
         html: `
-          <p>The path is AA. Recorded. The next answer is AB — but the path still holds that second
-          A. There is only one path, shared by every frame, so the only way to try the other branch
-          is to take back the last choice.</p>
-          <p>That is <code>pop()</code>. It is not tidying up; it is the mechanism that moves you
-          to the next branch. Without it you would go forward forever and the rest of the tree
-          would never exist. Step through it and watch <code>path</code> next to the stack.</p>`,
+          <p>The path is AA — recorded. The next answer is AB, but the path still holds that
+          second A. There is one path, shared by every frame. The only way to try the other
+          branch is to take the last choice back.</p>
+          <p>That is <code>pop()</code>. Not tidy-up: the mechanism. Step through it and watch
+          <code>path</code> next to the stack.</p>`,
         instrument: { problem: 'warmup' },
         jumps: [
           { target: 'warmup', approach: 'dfs', at: { anchor: 'record' }, label: 'Step 11: record AA' },
           { target: 'warmup', approach: 'dfs', at: { anchor: 'unchoose' }, label: 'Step 13: pop, back to A' },
-          { target: 'warmup', approach: 'dfs', at: 14, label: 'Step 15: choose B, and AB exists' },
+          { target: 'warmup', approach: 'dfs', at: 14, label: 'Step 15: choose B — AB' },
         ],
       },
       {
         title: 'Two questions before any code',
         html: `
-          <p>Before writing anything, answer these two. They are the entire design: the first
-          decides where the record goes, the second decides what the loop is over.</p>
-          <p>Say them out loud in an interview and the code writes itself.</p>`,
+          <p>Answer these two before writing anything. The first decides where the record goes.
+          The second decides what the loop is over. That is the whole design.</p>`,
         questions: [
           { q: 'When do I have a complete answer?',
-            a: 'When the path has length <code>n</code>. Stop going deeper, record it, return.' },
+            a: 'When the path has length <code>n</code>. Stop, record it, return.' },
           { q: 'What choices can I make from here?',
-            a: 'Add A, or add B — the same two branches from every node.' },
+            a: 'Add A, or add B — the same two from every node.' },
         ],
       },
       {
         title: 'Three parts of the code',
         html: `
-          <p>Check if done. Loop through the choices. Pop after each one. That pop runs after every
-          single recursive call and puts you back exactly where you were before that choice was
-          made.</p>
-          <p>This is the whole function. The two comments are Q1 and Q2; the code is their
-          answers.</p>`,
+          <p>Check if done. Loop through the choices. Pop after each one.</p>
+          <p>The pop runs after every recursive call and puts you back exactly where you were
+          before that choice. The two comments are Q1 and Q2; the code is their answers.</p>`,
         problem: 'warmup',
         approach: 'dfs',
         lang: 'python',
@@ -233,9 +226,8 @@ for first in ["A", "B"]:
       {
         title: 'Watch it run',
         html: `
-          <p>The full walkthrough for <code>n = 2</code>, with the call stack beside the tree.
-          Empty, A, AA — record — pop, AB — record — pop, pop, B, BA, BB.</p>
-          <p>Press play, or step with the arrows. Every pop puts you back exactly one step.</p>`,
+          <p>The whole run for <code>n = 2</code>, with the call stack beside the tree. Press play,
+          or step with the arrows. Every pop puts you back exactly one step.</p>`,
         instrument: { problem: 'warmup' },
         jumps: [
           { target: 'warmup', approach: 'dfs', play: true, label: 'Play the warm-up' },
@@ -244,32 +236,30 @@ for first in ["A", "B"]:
       {
         title: 'Now Subsets: the same two questions',
         html: `
-          <p>Subsets is the warm-up with different answers — and in one way it is simpler. In the
+          <p>Subsets is the warm-up with different answers — and simpler in one way. In the
           warm-up only full-length strings count, so Q1 needed a length check. In Subsets
-          <em>every</em> path is a valid subset, so Q1's answer is "always": record the moment you
-          arrive, and there is no check and no stop.</p>
-          <p>Tab 1 below is that form; the comments in its code are the same Q1 and Q2. Tab 2
-          draws the same answers the warm-up's way, a yes/no per number with answers only at the
-          leaves, if you prefer that picture.</p>`,
+          <em>every</em> path is a valid subset, so Q1 is "always": record on arrival, no check,
+          no stop.</p>
+          <p>Tab 1 below is that form. Its comments are the same Q1 and Q2.</p>`,
         questions: [
           { q: 'When do I have a complete answer?',
-            a: 'Always. Every path is a valid subset, so record it on arrival — no length check, no separate stop. When <code>index</code> reaches the end, the loop simply has nothing left to offer.' },
+            a: 'Always. Every path is a subset, so record it on arrival. When <code>index</code> reaches the end, the loop simply has nothing left.' },
           { q: 'What choices can I make from here?',
-            a: 'Everything to the right of the last number taken: <code>nums[index]</code>, <code>nums[index + 1]</code>, … Never look left, and no subset is ever made twice.' },
+            a: 'Everything to the right of the last number taken: <code>nums[index]</code>, <code>nums[index + 1]</code>, … so no subset is made twice.' },
         ],
       },
       {
         title: 'The same three parts, for Subsets',
         html: `
-          <p>Same three parts. "Check if done" became "record on arrival", because there is nothing
-          to check — every path counts. The loop runs over what is left of the array instead of
-          over a fixed pair of letters. The pop is exactly the same.</p>
-          <p>That is the entire function. Every backtracking solution you will write has this
-          shape; only the two answers change.</p>`,
+          <p>"Check if done" became "record on arrival" — there is nothing to check. The loop
+          runs over what is left of the array instead of two letters. The pop is exactly the
+          same.</p>
+          <p>Every backtracking solution you will write has this shape. Only the two answers
+          change.</p>`,
         approach: 'loop',
         lang: 'python',
         parts: [
-          { label: 'Record on arrival', note: 'Q1 — every path is complete, so there is nothing to check', anchors: ['record'] },
+          { label: 'Record on arrival', note: 'Q1 — every path is complete, nothing to check', anchors: ['record'] },
           { label: 'Loop through the choices', note: 'Q2 — everything to the right of index; choose, go deeper', anchors: ['loop', 'choose', 'recurse'] },
           { label: 'Pop after each one', note: 'the backtracking — back to before the choice', anchors: ['unchoose'] },
         ],
@@ -277,13 +267,12 @@ for first in ["A", "B"]:
       {
         title: 'Watch it run, then spot it everywhere',
         html: `
-          <p>Play tab 1 and read the stack beside the tree: each frame owns its own <code>i</code>,
-          <code>curr</code> is one list every frame can see, and <code>res</code> gains an entry at
-          every node. Then the tell: "generate all…", "return every…", "all combinations of…",
-          "all possible…". When a problem asks for every way something can be built, draw the
-          tree, answer the two questions, write the three parts.</p>
-          <p>Subsets II changes one line of Q2. Permutations changes Q2 and records at the leaves.
-          Combination Sum adds a reason to stop early. The skeleton never changes.</p>`,
+          <p>Play tab 1 and read the stack beside the tree: each frame owns its own
+          <code>i</code>, <code>curr</code> is one list every frame can see, and <code>res</code>
+          gains an entry at every node.</p>
+          <p>The tell: "generate all…", "return every…", "all combinations…". Draw the tree,
+          answer the two questions, write the three parts. Subsets II changes one line of Q2;
+          Permutations records at the leaves; Combination Sum adds a reason to stop early.</p>`,
         jumps: [
           { approach: 'loop', play: true, label: 'Play the trace' },
           { approach: 'loop', at: { anchor: 'unchoose' }, label: 'Step 17: the pop' },

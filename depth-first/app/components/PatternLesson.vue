@@ -1,13 +1,15 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { highlight } from '#engine/highlight.js';
+import { useNarration } from '~/composables/useNarration.js';
 
 /**
- * An intuition-first lesson, read BEFORE the instrument.
+ * An intuition-first lesson that sits above the instrument.
  *
- * The trace shows what happens; this is for someone who does not yet know why
- * the algorithm has the shape it has. It is a stepper rather than an essay so
- * the instrument stays near the top of the page: one idea, one visual, next.
+ * Closed by default: one strip that says what it is and offers to start, so
+ * the code and the trace stay where they have always been — first. Open, it
+ * is a stepper: one idea and one big visual per step, optionally read aloud,
+ * with the instrument one click away the whole time.
  *
  * Every visual is derived from real code and a real trace — a figure is a
  * frame of an actual run, annotated code resolves anchors to line numbers,
@@ -18,13 +20,20 @@ const props = defineProps({
   problem: { type: Object, required: true },
   lesson: { type: Object, required: true },
 });
-const emit = defineEmits(['jump']);
+const emit = defineEmits(['jump', 'skip']);
 
+const open = ref(false);
 const at = ref(0);
 const steps = computed(() => props.lesson.steps);
 const step = computed(() => steps.value[at.value]);
 const isLast = computed(() => at.value === steps.value.length - 1);
+// A picture step reads like a slide: visual on top, one short thought under it.
+const visualFirst = computed(() => Boolean(step.value.figure || step.value.grow || step.value.instrument));
+
 const go = (i) => { at.value = Math.max(0, Math.min(steps.value.length - 1, i)); grown.value = 1; };
+function start() { open.value = true; go(0); }
+function close() { open.value = false; cancel(); }
+function finish() { close(); emit('jump', props.lesson.finish); }
 
 // A visual names the problem it draws: the page's own, or the lesson's warm-up.
 const probFor = (ref) => (ref && ref.problem === 'warmup' ? props.lesson.warmup : props.problem);
@@ -35,6 +44,18 @@ function jump(j) {
   if (j.target === 'warmup') { mini.value?.jumpTo(j); return; }
   emit('jump', j);
 }
+
+/* ---------- read aloud ----------
+   The same voice as the trace. Each step is one spoken thought; the prose is
+   written to be read, so tags come off and the title leads. */
+const { supported: voiceSupported, enabled: voiceOn, speak, cancel, toggle: toggleVoice } = useNarration();
+const spokenText = (s) => `${s.title}. ${s.html.replace(/<[^>]+>/g, ' ')}`;
+function toggleRead() {
+  toggleVoice();
+  if (voiceOn.value) speak(spokenText(step.value), 0.95);
+}
+watch(at, () => { if (open.value && voiceOn.value) speak(spokenText(step.value), 0.95); });
+onBeforeUnmount(cancel);
 
 const codeLines = (source, lang = 'python') =>
   source.split('\n').map((l, i) => ({ n: i + 1, html: highlight(l, lang) }));
@@ -67,110 +88,135 @@ const regrow = () => { grown.value = 1; };
 </script>
 
 <template>
-  <section class="lesson" aria-label="Lesson">
-    <div class="lesson-head">
-      <h2>{{ lesson.kicker }}</h2>
-      <ol class="lesson-dots" aria-label="Lesson steps">
-        <li v-for="(s, i) in steps" :key="i">
-          <button
-            type="button"
-            :aria-current="i === at ? 'step' : null"
-            :aria-label="`Step ${i + 1}: ${s.title}`"
-            @click="go(i)"
-          >{{ i + 1 }}</button>
-        </li>
-      </ol>
+  <section class="lesson" :class="{ open }" aria-label="Lesson">
+    <!-- Closed: one strip. The instrument below stays the first real thing on the page. -->
+    <div v-if="!open" class="lesson-strip">
+      <div class="lesson-strip-text">
+        <h2>{{ lesson.kicker }}</h2>
+        <p class="lesson-thesis">{{ lesson.heading }}</p>
+        <p class="lesson-meta">New to backtracking? {{ steps.length }} short steps with pictures, before the code. About four minutes.</p>
+      </div>
+      <button class="btn primary lesson-start" type="button" @click="start">▶ Start the lesson</button>
     </div>
-    <p class="lesson-thesis">{{ lesson.heading }}</p>
 
-    <div class="lesson-body" :class="{ wide: step.instrument }">
-      <div class="lesson-text">
-        <p class="lesson-stepno">Step {{ at + 1 }} of {{ steps.length }}</p>
-        <h3>{{ step.title }}</h3>
-        <div class="lesson-prose" v-html="step.html" />
-        <div v-if="step.jumps" class="lesson-actions">
+    <template v-else>
+      <div class="lesson-head">
+        <h2>{{ lesson.kicker }}</h2>
+        <ol class="lesson-dots" aria-label="Lesson steps">
+          <li v-for="(s, i) in steps" :key="i">
+            <button
+              type="button"
+              :aria-current="i === at ? 'step' : null"
+              :aria-label="`Step ${i + 1}: ${s.title}`"
+              @click="go(i)"
+            >{{ i + 1 }}</button>
+          </li>
+        </ol>
+        <span class="lesson-tools">
           <button
-            v-for="(j, i) in step.jumps"
-            :key="i"
-            class="btn"
+            v-if="voiceSupported"
+            class="btn narrate"
             type="button"
-            @click="jump(j)"
-          >{{ j.label }} ›</button>
-        </div>
+            title="Read each step aloud"
+            :aria-pressed="voiceOn ? 'true' : 'false'"
+            @click="toggleRead"
+          >{{ voiceOn ? '🔊 Reading' : '🔇 Read aloud' }}</button>
+          <button class="btn ghost" type="button" @click="emit('skip')">Skip to the code ↓</button>
+          <button class="btn ghost" type="button" aria-label="Close the lesson" @click="close">✕</button>
+        </span>
       </div>
 
-      <div class="lesson-visual">
-        <pre v-if="step.snippet" class="code lesson-code"><div
-          v-for="ln in codeLines(step.snippet.source, step.snippet.lang)"
-          :key="ln.n"
-          class="cl"
-        ><span class="n">{{ ln.n }}</span><span v-html="ln.html" /></div></pre>
-
-        <TraceFigure
-          v-else-if="step.figure"
-          :problem="probFor(step.figure)"
-          :approach="step.figure.approach"
-          :at="step.figure.at"
-          :input="step.figure.input"
-          :caption="step.figure.caption"
-        />
-
-        <div v-else-if="step.grow" class="lesson-grow">
-          <TraceFigure
-            :problem="probFor(step.grow)"
-            :approach="step.grow.approach"
-            :at="growAt"
-            :input="step.grow.input"
-            :caption="`${Math.min(grown, callFrames.length)} of ${callFrames.length} nodes — each one created the moment the DFS reaches it.`"
-          />
-          <div class="lesson-growbar">
-            <button class="btn primary" type="button" :disabled="grown >= callFrames.length" @click="grow">
-              {{ grown >= callFrames.length ? 'All grown' : 'Grow' }}
-            </button>
-            <button class="btn ghost" type="button" @click="regrow">Start over</button>
-          </div>
-        </div>
-
-        <AlgoTrace
-          v-else-if="step.instrument"
-          ref="mini"
-          :problem="probFor(step.instrument)"
-          compact
-        />
-
-        <div v-else-if="step.questions" class="lesson-qs">
-          <div v-for="(q, i) in step.questions" :key="i" class="lesson-q">
-            <span class="lesson-qn">Q{{ i + 1 }}</span>
-            <b>{{ q.q }}</b>
-            <p v-html="q.a" />
-          </div>
-        </div>
-
-        <div v-else-if="step.parts" class="lesson-parts">
-          <pre class="code lesson-code"><div
-            v-for="ln in partLines"
+      <div class="lesson-body" :class="{ 'visual-first': visualFirst }">
+        <div class="lesson-visual">
+          <pre v-if="step.snippet" class="code lesson-code"><div
+            v-for="ln in codeLines(step.snippet.source, step.snippet.lang)"
             :key="ln.n"
             class="cl"
-            :class="ln.part !== null ? 'part p' + ln.part : ''"
           ><span class="n">{{ ln.n }}</span><span v-html="ln.html" /></div></pre>
-          <ol class="lesson-partkey">
-            <li v-for="(p, k) in step.parts" :key="k" :class="'p' + k">
-              <b>{{ p.label }}</b>
-              <span>{{ p.note }}</span>
-            </li>
-          </ol>
+
+          <TraceFigure
+            v-else-if="step.figure"
+            :problem="probFor(step.figure)"
+            :approach="step.figure.approach"
+            :at="step.figure.at"
+            :input="step.figure.input"
+            :caption="step.figure.caption"
+            plain
+          />
+
+          <div v-else-if="step.grow" class="lesson-grow">
+            <TraceFigure
+              :problem="probFor(step.grow)"
+              :approach="step.grow.approach"
+              :at="growAt"
+              :input="step.grow.input"
+              :caption="`${Math.min(grown, callFrames.length)} of ${callFrames.length} nodes — each one appears the moment the DFS reaches it.`"
+              plain
+            />
+            <div class="lesson-growbar">
+              <button class="btn primary" type="button" :disabled="grown >= callFrames.length" @click="grow">
+                {{ grown >= callFrames.length ? 'All grown' : 'Grow' }}
+              </button>
+              <button class="btn ghost" type="button" @click="regrow">Start over</button>
+            </div>
+          </div>
+
+          <AlgoTrace
+            v-else-if="step.instrument"
+            ref="mini"
+            :problem="probFor(step.instrument)"
+            compact
+          />
+
+          <div v-else-if="step.questions" class="lesson-qs">
+            <div v-for="(q, i) in step.questions" :key="i" class="lesson-q">
+              <span class="lesson-qn">Q{{ i + 1 }}</span>
+              <b>{{ q.q }}</b>
+              <p v-html="q.a" />
+            </div>
+          </div>
+
+          <div v-else-if="step.parts" class="lesson-parts">
+            <pre class="code lesson-code"><div
+              v-for="ln in partLines"
+              :key="ln.n"
+              class="cl"
+              :class="ln.part !== null ? 'part p' + ln.part : ''"
+            ><span class="n">{{ ln.n }}</span><span v-html="ln.html" /></div></pre>
+            <ol class="lesson-partkey">
+              <li v-for="(p, k) in step.parts" :key="k" :class="'p' + k">
+                <b>{{ p.label }}</b>
+                <span>{{ p.note }}</span>
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="lesson-text">
+          <p class="lesson-stepno">Step {{ at + 1 }} of {{ steps.length }}</p>
+          <h3>{{ step.title }}</h3>
+          <div class="lesson-prose" v-html="step.html" />
+          <div v-if="step.jumps" class="lesson-actions">
+            <button
+              v-for="(j, i) in step.jumps"
+              :key="i"
+              class="btn"
+              type="button"
+              @click="jump(j)"
+            >{{ j.label }} ›</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="lesson-nav">
-      <button class="btn" type="button" :disabled="at === 0" @click="go(at - 1)">‹ Back</button>
-      <span v-if="lesson.credit" class="lesson-credit" v-html="lesson.credit" />
-      <button
-        class="btn primary"
-        type="button"
-        @click="isLast ? emit('jump', lesson.finish) : go(at + 1)"
-      >{{ isLast ? (lesson.finish?.label || 'Play the trace') : 'Next' }} ›</button>
-    </div>
+      <div class="lesson-nav">
+        <button class="btn" type="button" :disabled="at === 0" @click="go(at - 1)">‹ Back</button>
+        <span v-if="lesson.credit" class="lesson-credit" v-html="lesson.credit" />
+        <button
+          class="btn primary"
+          type="button"
+          @click="isLast ? finish() : go(at + 1)"
+        >{{ isLast ? (lesson.finish?.label || 'Play the trace') : 'Next' }} ›</button>
+      </div>
+    </template>
   </section>
 </template>

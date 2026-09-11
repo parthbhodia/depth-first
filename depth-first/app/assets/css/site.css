@@ -689,3 +689,27 @@ svg.calltree { display: block; max-width: none; }
 .instrument.compact .canvas-hold { min-height: 170px; }
 .instrument.compact .transport.top { padding: 10px 14px; }
 .instrument.compact .stage-body { padding-bottom: 0; }
+
+/* Closed lesson: a strip. Open lesson: slides. */
+.lesson-strip { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.lesson-strip-text { min-width: 0; }
+.lesson-strip .lesson-thesis { margin-top: 6px; }
+.lesson-meta { margin: 6px 0 0; font-family: "Newsreader", Georgia, serif; font-size: 15px; color: var(--ink-3); }
+.lesson-start { font-size: 13.5px; padding: 10px 18px; }
+.lesson-tools { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+.lesson-body.visual-first { grid-template-columns: minmax(0, 1fr); }
+.lesson-body.visual-first .lesson-prose { max-width: 62ch; }
+.lesson-body.visual-first .lesson-visual .tracefig { max-width: none; }
+.lesson-visual .calltree-hold.compact svg.calltree { width: 100%; max-width: 720px; height: auto; }
+.instrument.compact .rig { grid-template-columns: minmax(0, 1fr); }
+
+/* The figure's canvas is a flex item that shrink-wraps; let it take the column. */
+.lesson-visual .tracefig-canvas .calltree-hold.compact { width: 100%; }
+.lesson-visual .tracefig-canvas svg.calltree { width: 100%; max-width: 720px; height: auto; margin: 0 auto; }
+/* The strip stays a strip. */
+.lesson-strip .lesson-thesis { font-size: clamp(18px, 2.2vw, 22px); }
+.lesson-meta { font-size: 14px; }
+.lesson:not(.open) { padding-bottom: 14px; }
+/* Stage-only instrument: no input row either; the lesson fixes the input. */
+.instrument.compact .inputs { display: none; }
+@media (max-width: 560px) { .lesson-meta { display: none; } .lesson-strip { gap: 12px; } }

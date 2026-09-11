@@ -6,6 +6,9 @@ const props = defineProps({
   frame: { type: Object, default: null },
   // Figures scale to fit; the live canvas keeps natural size and scrolls.
   compact: { type: Boolean, default: false },
+  // A teaching figure: nodes and edges only. Return badges and repeat marks
+  // answer questions the reader has not asked yet.
+  plain: { type: Boolean, default: false },
 });
 
 const revealed = computed(() => (props.frame ? props.frame.revealed || 0 : 0));
@@ -74,12 +77,12 @@ const nodeClass = (n) => ({
         />
         <text class="cnodet" :x="n.x" :y="n.y">{{ n.label }}</text>
         <text
-          v-if="n.dup"
+          v-if="n.dup && !plain"
           class="cdup"
           :x="n.x - n.w / 2 + 1"
           :y="n.y - n.h / 2 - 6"
         >×{{ n.dupCount }}</text>
-        <g v-if="returns[n.id] !== undefined">
+        <g v-if="returns[n.id] !== undefined && !plain">
           <circle class="cbadge" :cx="n.x + n.w / 2 - 2" :cy="n.y - n.h / 2 + 1" r="10" />
           <text class="cbadget" :x="n.x + n.w / 2 - 2" :y="n.y - n.h / 2 + 1">{{ returns[n.id] }}</text>
         </g>

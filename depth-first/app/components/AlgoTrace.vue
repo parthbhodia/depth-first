@@ -391,6 +391,7 @@ onBeforeUnmount(() => {
 
     <div class="rig" :class="{ touring: tourOn }">
       <CodePane
+        v-if="!compact"
         :class="{ 'tour-focus': focusZone === 'code' }"
         :code="approach.code"
         :lang="langId"
