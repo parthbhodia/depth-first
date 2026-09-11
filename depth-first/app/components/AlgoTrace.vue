@@ -47,12 +47,15 @@ const {
   persist: persistVoice,
 } = useNarration();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// A frame may carry a `spoken` version of its caption, for the things that
+// read fine on screen and badly out loud.
+const spokenOf = (f) => (f ? f.spoken || f.caption : '');
 
 // When narration is on, the sentence sets the pace — the trace waits for the
 // voice to finish rather than racing a fixed timer against it.
 async function pace(f, speed) {
   if (voiceOn.value && f) {
-    const spoke = await speak(f.caption, speechRate(speed));
+    const spoke = await speak(spokenOf(f), speechRate(speed));
     await sleep(spoke ? 220 : 950 / speed);
     return;
   }
@@ -66,7 +69,7 @@ const { index, playing, speed, frame, frames, last, toggle, step, restart, scrub
 // pacer is already doing the talking, so don't double up.
 watch(index, () => {
   if (!voiceOn.value || playing.value) return;
-  speak(frame.value?.caption, speechRate(speed.value));
+  speak(spokenOf(frame.value), speechRate(speed.value));
 });
 
 watch(playing, (isPlaying) => {
@@ -77,14 +80,14 @@ function toggleNarration() {
   toggleVoice();
   // Immediate feedback that the voice works, and on which sentence.
   if (voiceOn.value && !playing.value) {
-    speak(frame.value?.caption, speechRate(speed.value));
+    speak(spokenOf(frame.value), speechRate(speed.value));
   }
 }
 
 function onVoiceChange() {
   persistVoice();
   if (voiceOn.value && !playing.value) {
-    speak(frame.value?.caption, speechRate(speed.value));
+    speak(spokenOf(frame.value), speechRate(speed.value));
   }
 }
 
@@ -465,7 +468,7 @@ onBeforeUnmount(() => {
         @change="onVoiceChange"
       >
         <option v-for="v in voiceList" :key="v.voiceURI" :value="v.voiceURI">
-          {{ v.name }}
+          {{ v.name }} · {{ v.lang }}
         </option>
       </select>
     </div>

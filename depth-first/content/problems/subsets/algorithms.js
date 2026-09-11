@@ -291,6 +291,14 @@ const blank = {
 const fmt = (a) => (a.length ? `[${a.join(',')}]` : '[ ]');
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
+/*
+ * Captions are written to be read. Where one shows a list, the frame also
+ * carries a `spoken` version, because "[1,2,3]" is fine on screen and noise
+ * out loud. The narration prefers `spoken` when it is there.
+ */
+const words = (a) => (a.length ? a.join(', ').replace(/, ([^,]*)$/, ' and $1') : 'empty');
+const subset = (a) => (a.length ? `the subset ${words(a)}` : 'the empty subset');
+
 /* 1. The canonical form: loop from index, record on arrival. */
 
 function loopFrames(nums) {
@@ -343,44 +351,45 @@ function loopFrames(nums) {
     stack.push(fr);
 
     snap('call', depth === 0
-      ? 'First call: index = 0 and curr is empty. There is no i yet — the for statement is what creates it.'
-      : `Frame pushed with index = ${index}. Everything below it is frozen mid-loop, each holding its own i.`,
+      ? 'Here we go. A subset is any group of some of our numbers — even none of them. Our list curr starts empty, and there is no i yet: the for loop will create it.'
+      : `A new frame starts, with index = ${index}. It may only pick from position ${index} onward. Every frame under it is paused in its own loop, each remembering its own i.`,
     { active: id, flash: 'call' });
 
     const mark = res.length;
     res.push([...curr]);
     flashAdd = true;
+    const record = (list) => `Save ${list}. We save the moment we arrive, so every node in this tree is an answer — not just the ones at the bottom.`;
     snap('record', depth === 0
-      ? 'Record curr immediately, before choosing anything. That is why the empty subset costs nothing extra.'
-      : `Record ${fmt(curr)}. Recording happens on arrival, so every node of this tree is an answer — not just the leaves.`,
-    { active: id, flash: 'best' });
+      ? 'First, save what we have — even though it is empty. The empty subset counts too, and it costs nothing extra.'
+      : record(fmt(curr)),
+    { active: id, flash: 'best', spoken: depth === 0 ? null : record(subset(curr)) });
 
     for (let i = index; i < nums.length; i++) {
       fr.i = i;
       snap('loop', i === index
-        ? `Loop starts at i = index = ${index}. Only nums[${index}] onward are on the table; anything to the left is behind us.`
-        : `i advances to ${i}. curr was restored first, so this iteration starts from a clean path.`,
+        ? `The loop starts at i = ${index}, the same as index. Only the numbers from position ${index} onward are still up for grabs — everything before that is settled.`
+        : `i moves on to ${i}. curr was put back the way it was, so this next pick starts clean.`,
       { active: id });
 
       curr.push(nums[i]);
-      snap('choose', `Choose nums[${i}] = ${nums[i]}. curr is one shared list, so this single push is visible to every frame on the stack.`,
+      snap('choose', `Pick nums[${i}], which is ${nums[i]}, and add it to curr. There is only one curr, shared by every frame — so all of them see this change.`,
         { active: id, flash: 'call' });
 
       go(i + 1, id, depth + 1);
 
-      snap('recurse', `Back from the call. This frame resumes on the very next line with i still ${i} — the stack remembered that for us.`,
+      snap('recurse', `Back from that call. This frame carries on from the next line with i still ${i} — the stack remembered that for us.`,
         { active: id });
 
       curr.pop();
-      snap('unchoose', `Un-choose. curr.pop() restores curr to ${fmt(curr)}, exactly what it was before the choice. Every later sibling depends on this being perfect.`,
-        { active: id, flash: 'return' });
+      const undo = (list) => `Un-pick it. curr.pop() takes ${nums[i]} back out, so curr is ${list} again — exactly as it was before the pick. Every later sibling depends on that undo being perfect.`;
+      snap('unchoose', undo(fmt(curr)), { active: id, flash: 'return', spoken: undo(words(curr)) });
     }
 
     fr.i = 'done';
     returns[id] = res.length - mark;
     snap('loop', index >= nums.length
-      ? 'The range is empty, so i is never created at all. Nothing to choose — the call returns immediately.'
-      : `No values left. This frame is finished and returns, having contributed ${plural(res.length - mark, 'subset')}.`,
+      ? 'There is nothing left to look at, so the loop never starts and i is never even created. This call simply returns.'
+      : `No numbers left to pick. This frame is finished and returns — it added ${plural(res.length - mark, 'subset')} along the way.`,
     { active: id, flash: 'return' });
 
     stack.pop();
@@ -391,7 +400,7 @@ function loopFrames(nums) {
   frames.push({
     ...blank,
     anchor: 'done',
-    caption: `Stack empty, ${plural(res.length, 'subset')} in res — that is 2^${nums.length}. The tree has ${nodes.length} nodes but the stack never held more than ${nums.length + 1} frames: exponential time, linear space.`,
+    caption: `All done. res holds ${plural(res.length, 'subset')} — that is 2^${nums.length}. The tree has ${nodes.length} nodes, but the stack never held more than ${nums.length + 1} frames at once: lots of time, very little memory.`,
     callStack: [],
     returns: { ...returns },
     revealed: nodes.length,
@@ -445,35 +454,36 @@ function binaryFrames(nums) {
     nodes.push({ id, parentId, key: `${depth}:${curr.join(',')}`, label: fmt(curr), depth });
     stack.push({ id, label: fmt(curr), i });
 
-    snap('call', depth === 0
-      ? 'One call per element, and exactly two choices inside each: take it, or do not.'
-      : `Frame for i = ${i}. It decides one thing only: is nums[${i}] in or out?`,
-    { active: id, flash: 'call' });
+    let arrive;
+    if (depth === 0) arrive = 'One frame per number, and just two choices in each: put it in, or leave it out.';
+    else if (i < nums.length) arrive = `A new frame for i = ${i}. It answers one question only: is ${nums[i]} in, or out?`;
+    else arrive = 'A new frame — and every number has already been decided.';
+    snap('call', arrive, { active: id, flash: 'call' });
 
     const mark = res.length;
 
     if (i === nums.length) {
-      snap('base', 'Every element has been decided, so this path is a complete subset.', { active: id });
+      snap('base', 'Nothing left to decide, so what is in curr right now is one complete subset.', { active: id });
       res.push([...curr]);
       flashAdd = true;
       returns[id] = 1;
-      snap('record', `Record ${fmt(curr)}. Here answers only come from leaves — one leaf, one subset, which is why there are exactly 2^n of them.`,
-        { active: id, flash: 'best' });
+      const record = (list) => `Save ${list}. In this version answers appear only at the leaves — one leaf, one subset — and there are exactly 2^n leaves.`;
+      snap('record', record(fmt(curr)), { active: id, flash: 'best', spoken: record(subset(curr)) });
       stack.pop();
       return;
     }
 
     curr.push(nums[i]);
-    snap('include', `Left branch: take nums[${i}] = ${nums[i]}.`, { active: id, flash: 'call' });
+    snap('include', `Left branch: put ${nums[i]} in.`, { active: id, flash: 'call' });
     dfs(i + 1, id, depth + 1);
 
     curr.pop();
-    snap('exclude', `Now the right branch: put ${nums[i]} back and explore without it. Note the child's path is the same as this node's — excluding does not change curr, which is exactly what makes this a binary choice rather than a loop.`,
+    snap('exclude', `Now the right branch: take ${nums[i]} back out and try without it. Notice the child looks just like this node — leaving a number out does not change curr. That is what makes this a yes-or-no choice instead of a loop.`,
       { active: id, flash: 'return' });
     dfs(i + 1, id, depth + 1);
 
     returns[id] = res.length - mark;
-    snap('recurseEx', `Both branches done. This subtree produced ${plural(res.length - mark, 'subset')}.`,
+    snap('recurseEx', `Both choices tried. This part of the tree made ${plural(res.length - mark, 'subset')}.`,
       { active: id, flash: 'return' });
     stack.pop();
   }
@@ -483,7 +493,7 @@ function binaryFrames(nums) {
   frames.push({
     ...blank,
     anchor: 'done',
-    caption: `${plural(res.length, 'subset')}, one per leaf of a perfect binary tree of depth ${nums.length}. The 2^n is not a derivation here — you can count it off the bottom row.`,
+    caption: `${plural(res.length, 'subset')}, one for each leaf of a tree ${nums.length} levels deep. No need to work out 2^n — just count the bottom row.`,
     callStack: [],
     returns: { ...returns },
     revealed: nodes.length,
@@ -527,14 +537,14 @@ function bitmaskFrames(nums) {
   };
 
   bits = new Array(n).fill(0);
-  snap('init', `No recursion and no stack. Each of the ${total} integers from 0 to ${total - 1} has ${plural(n, 'bit')}, and each bit answers "is nums[i] in?" — the same question the binary tree asked, written as a number.`, {});
+  snap('init', `No recursion and no stack. We simply count from 0 to ${total - 1}. Each number has ${plural(n, 'bit')}, and each bit is a yes-or-no for one of our numbers — the same question the tree asked, written as a number.`, {});
 
   for (let mask = 0; mask < total; mask++) {
     bits = [];
     for (let i = 0; i < n; i++) bits.push((mask >> i) & 1);
     focus = null;
     const binary = bits.slice().reverse().join('');
-    snap('mask', `mask = ${mask}, which is ${binary} in binary. Read right to left: bit i decides nums[i].`, {
+    snap('mask', `mask = ${mask}, which is ${binary} in binary. Read the bits right to left: bit i is the yes-or-no for nums[i].`, {
       vars: [{ name: 'mask', value: `${mask} (${binary})` }],
     });
 
@@ -544,12 +554,14 @@ function bitmaskFrames(nums) {
       const on = ((mask >> i) & 1) === 1;
       if (on) {
         curr.push(nums[i]);
-        snap('take', `Bit ${i} is set, so take nums[${i}] = ${nums[i]}. curr is now ${fmt(curr)}.`, {
+        const take = (list) => `Bit ${i} is on, so ${nums[i]} goes in. curr is now ${list}.`;
+        snap('take', take(fmt(curr)), {
           flash: 'best',
+          spoken: take(words(curr)),
           vars: [{ name: 'mask', value: `${mask} (${binary})` }, { name: 'curr', value: fmt(curr) }],
         });
       } else {
-        snap('test', `Bit ${i} is clear, so nums[${i}] stays out.`, {
+        snap('test', `Bit ${i} is off, so ${nums[i]} stays out.`, {
           vars: [{ name: 'mask', value: `${mask} (${binary})` }, { name: 'curr', value: fmt(curr) }],
         });
       }
@@ -558,8 +570,10 @@ function bitmaskFrames(nums) {
     focus = null;
     res.push([...curr]);
     flashAdd = true;
-    snap('record', `mask ${mask} spells out ${fmt(curr)}. One integer, one subset, no branching to keep track of.`, {
+    const record = (list) => `mask ${mask} spells out ${list}. One number, one subset — nothing to branch on, nothing to undo.`;
+    snap('record', record(fmt(curr)), {
       flash: 'best',
+      spoken: record(subset(curr)),
       vars: [{ name: 'mask', value: `${mask} (${binary})` }, { name: 'curr', value: fmt(curr) }],
     });
   }
@@ -567,7 +581,7 @@ function bitmaskFrames(nums) {
   frames.push({
     ...blank,
     anchor: 'done',
-    caption: `${plural(res.length, 'subset')} from counting to ${total - 1}. Same answers, no call stack — but the order is the counting order, and there is nowhere to prune, which is why the recursive form still wins the moment a problem adds a constraint.`,
+    caption: `${plural(res.length, 'subset')} just from counting to ${total - 1}. Same answers, no call stack — but you cannot skip anything early, which is why the recursive version wins the moment a problem adds a rule.`,
     table: cells(),
     collected: { label: 'res', items: res.map(fmt), justAdded: null },
     result: res.length,
@@ -587,8 +601,8 @@ export const approaches = [
     watchFor:
       'Watch curr in the State panel, and watch i in each stack frame. curr returns to exactly what it was before every choice; i picks up exactly where it left off.',
     idea:
-      'One shared list walks the whole tree. Append a value, recurse, then pop it back off — after that pop, curr is byte-for-byte what it was before the branch, so the next sibling starts clean. '
-      + 'The index parameter is what stops [1,3] and [3,1] both being generated: each call may only look rightwards of the element the caller just took.',
+      'Keep one shared list. Add a number, explore everything that can follow it, then take the number back out. After that pop, curr is exactly what it was before — so the next choice starts clean. '
+      + 'The index is what stops us from making [1,3] and then [3,1] again: each call may only pick numbers to the right of the one just taken.',
     time: 'O(n · 2ⁿ)',
     space: 'O(n)',
     spaceNote: 'The stack is at most n + 1 deep and curr holds at most n values — the 2ⁿ is time, not memory.',
@@ -603,8 +617,8 @@ export const approaches = [
     watchFor:
       'Watch the bottom row. Every leaf is one subset and there are exactly 2ⁿ of them — that is the whole complexity argument, visible.',
     idea:
-      'Instead of looping over what is left, decide one element at a time: in, or out. That is a strictly binary tree of depth n, and answers appear only at the leaves. '
-      + 'It is the more intuitive picture of "each element is in or out", but it does not generalise — the loop form is what you extend for combinations, Subsets II and Combination Sum.',
+      'Instead of looping over what is left, ask one question per number: in, or out? That draws a tree with one level per number, and the answers sit at the bottom. '
+      + 'It is the easiest picture to understand — but the loop version is the one you grow into Combinations, Subsets II and Combination Sum.',
     time: 'O(n · 2ⁿ)',
     space: 'O(n)',
     spaceNote: 'Same n-deep stack. The tree has 2ⁿ⁺¹ − 1 nodes but only 2ⁿ of them produce anything.',
@@ -619,8 +633,8 @@ export const approaches = [
     watchFor:
       'Watch the bit row against the subset that comes out. The mask is the include/exclude tree, flattened into an integer.',
     idea:
-      'Every subset corresponds to one n-bit number: bit i set means nums[i] is in. So loop the integers from 0 to 2ⁿ − 1 and read each one off. '
-      + 'No recursion, no stack, and it is a genuinely good answer to give after the recursive one — but only for pure subsets. The moment there is a constraint to prune on, the tree comes back.',
+      'Every subset matches one binary number: bit i on means nums[i] is in. So count from 0 up to 2ⁿ − 1 and read off each number\'s bits. No recursion, no stack. '
+      + 'It is a nice thing to mention after the recursive one — but only for plain subsets. The moment there is a rule that lets you skip branches early, you want the tree back.',
     time: 'O(n · 2ⁿ)',
     space: 'O(1)',
     spaceNote: 'Beyond the output there is nothing to store — no stack at all.',

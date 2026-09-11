@@ -17,9 +17,28 @@ export function toSpeech(text) {
   s = s.replace(/\blen\(\s*q\s*\)/gi, 'the length of q');
   s = s.replace(/\bq\.popleft\(\)/gi, 'q dot popleft');
   s = s.replace(/\bstack\.pop\(\)/gi, 'stack dot pop');
+  // Any other call with arguments: climb(5) → "climb of 5", dfs(null) → "dfs of null".
+  s = s.replace(/\b([A-Za-z_]\w*)\(([^()]+)\)/g, '$1 of $2');
 
-  // [node, depth] pairs — the brackets are noise, the pairing is the point.
-  s = s.replace(/\[\s*([^\],]+?)\s*,\s*([^\]]+?)\s*\]/g, 'the pair $1, $2');
+  // Indexing: nums[i] → "nums at i", dp[5] → "dp at 5". Must run before the
+  // list rules below, which would otherwise eat the brackets.
+  s = s.replace(/(\w)\[([^[\]]+)\]/g, '$1 at $2');
+
+  // Lists. [ ] is an empty list; [node, depth] pairs keep the word "pair"
+  // because the pairing is the point; anything longer reads as a list.
+  s = s.replace(/\[\s*\]/g, 'an empty list');
+  s = s.replace(/\[\s*([^\],]+?)\s*,\s*([^\],]+?)\s*\]/g, 'the pair $1, $2');
+  s = s.replace(/\[([^[\]]+)\]/g, (_, inner) => {
+    const items = inner.split(',').map((x) => x.trim()).filter(Boolean);
+    if (items.length < 2) return items.join('');
+    return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+  });
+
+  // Powers: 2^n, 2ⁿ, 2ⁿ⁺¹.
+  s = s.replace(/(\w+)\^(\w+)/g, '$1 to the power of $2');
+  s = s.replace(/ⁿ⁺¹/g, ' to the power of n plus 1');
+  s = s.replace(/ⁿ/g, ' to the power of n');
+  s = s.replace(/²/g, ' squared');
 
   // node.left → "node left"
   s = s.replace(/([A-Za-z])\.([A-Za-z])/g, '$1 $2');
@@ -30,6 +49,12 @@ export function toSpeech(text) {
   s = s.replace(/\s*=\s*/g, ' equals ');
   s = s.replace(/(\d)\s*\+\s*/g, '$1 plus ');
   s = s.replace(/\s*\+\s*(\d)/g, ' plus $1');
+  s = s.replace(/\s*−\s*/g, ' minus ');
+  s = s.replace(/\b([A-Za-z])-(\d)/g, '$1 minus $2');
+  s = s.replace(/\s*%\s*/g, ' mod ');
+  s = s.replace(/(\S)@(\d)/g, '$1 at $2');
+  s = s.replace(/°/g, ' degrees');
+  s = s.replace(/\s*·\s*/g, ' times ');
 
   // Leftover empty call parens.
   s = s.replace(/\(\)/g, '');
@@ -37,9 +62,24 @@ export function toSpeech(text) {
   return s.replace(/\s+/g, ' ').trim();
 }
 
-/** The playback speed control doubles as the speech rate control. */
+/**
+ * One utterance per sentence. Engines pause properly between utterances, and
+ * Chrome's cloud voices go silent partway through anything longer than about
+ * fifteen seconds, so short pieces are both clearer and safer.
+ */
+export function toSentences(phrase) {
+  const parts = (String(phrase).match(/[^.!?]+[.!?]*["')\]]*/g) || [])
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.length ? parts : [String(phrase).trim()].filter(Boolean);
+}
+
+/**
+ * The playback speed control doubles as the speech rate control. A touch
+ * under 1 at normal speed: every voice is easier to follow that way.
+ */
 export function speechRate(speed) {
   if (speed <= 0.5) return 0.8;
-  if (speed >= 2) return 1.6;
-  return 1;
+  if (speed >= 2) return 1.5;
+  return 0.95;
 }
