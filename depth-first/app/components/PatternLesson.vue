@@ -9,9 +9,10 @@ import { highlight } from '#engine/highlight.js';
  * the algorithm has the shape it has. It is a stepper rather than an essay so
  * the instrument stays near the top of the page: one idea, one visual, next.
  *
- * Every visual is derived from the problem's own code and trace — a figure is
- * a frame of the real run, and annotated code resolves anchors to line
- * numbers — so nothing here can drift from what the instrument shows.
+ * Every visual is derived from real code and a real trace — a figure is a
+ * frame of an actual run, annotated code resolves anchors to line numbers,
+ * and a step can embed a whole (compact) instrument for a warm-up problem —
+ * so nothing here can drift from what the instrument shows.
  */
 const props = defineProps({
   problem: { type: Object, required: true },
@@ -23,7 +24,17 @@ const at = ref(0);
 const steps = computed(() => props.lesson.steps);
 const step = computed(() => steps.value[at.value]);
 const isLast = computed(() => at.value === steps.value.length - 1);
-const go = (i) => { at.value = Math.max(0, Math.min(steps.value.length - 1, i)); };
+const go = (i) => { at.value = Math.max(0, Math.min(steps.value.length - 1, i)); grown.value = 1; };
+
+// A visual names the problem it draws: the page's own, or the lesson's warm-up.
+const probFor = (ref) => (ref && ref.problem === 'warmup' ? props.lesson.warmup : props.problem);
+
+// Jumps aimed at the embedded instrument stay here; the rest go to the page.
+const mini = ref(null);
+function jump(j) {
+  if (j.target === 'warmup') { mini.value?.jumpTo(j); return; }
+  emit('jump', j);
+}
 
 const codeLines = (source, lang = 'python') =>
   source.split('\n').map((l, i) => ({ n: i + 1, html: highlight(l, lang) }));
@@ -32,7 +43,7 @@ const codeLines = (source, lang = 'python') =>
 const partLines = computed(() => {
   const s = step.value;
   if (!s.parts) return [];
-  const approach = props.problem.approachById(s.approach);
+  const approach = probFor(s).approachById(s.approach);
   const lang = s.lang || 'python';
   const entry = approach.code[lang];
   const owner = new Map();
@@ -45,8 +56,9 @@ const grown = ref(1);
 const callFrames = computed(() => {
   const s = step.value;
   if (!s.grow) return [];
-  const approach = props.problem.approachById(s.grow.approach);
-  const { frames } = approach.build(props.problem.parseInput(s.grow.input ?? props.problem.defaultInput));
+  const problem = probFor(s.grow);
+  const approach = problem.approachById(s.grow.approach);
+  const { frames } = approach.build(problem.parseInput(s.grow.input ?? problem.defaultInput));
   return frames.map((f, i) => (f.anchor === 'call' ? i : -1)).filter((i) => i >= 0);
 });
 const growAt = computed(() => callFrames.value[Math.min(grown.value, callFrames.value.length) - 1] ?? 0);
@@ -71,7 +83,7 @@ const regrow = () => { grown.value = 1; };
     </div>
     <p class="lesson-thesis">{{ lesson.heading }}</p>
 
-    <div class="lesson-body">
+    <div class="lesson-body" :class="{ wide: step.instrument }">
       <div class="lesson-text">
         <p class="lesson-stepno">Step {{ at + 1 }} of {{ steps.length }}</p>
         <h3>{{ step.title }}</h3>
@@ -82,7 +94,7 @@ const regrow = () => { grown.value = 1; };
             :key="i"
             class="btn"
             type="button"
-            @click="emit('jump', j)"
+            @click="jump(j)"
           >{{ j.label }} ›</button>
         </div>
       </div>
@@ -96,7 +108,7 @@ const regrow = () => { grown.value = 1; };
 
         <TraceFigure
           v-else-if="step.figure"
-          :problem="problem"
+          :problem="probFor(step.figure)"
           :approach="step.figure.approach"
           :at="step.figure.at"
           :input="step.figure.input"
@@ -105,7 +117,7 @@ const regrow = () => { grown.value = 1; };
 
         <div v-else-if="step.grow" class="lesson-grow">
           <TraceFigure
-            :problem="problem"
+            :problem="probFor(step.grow)"
             :approach="step.grow.approach"
             :at="growAt"
             :input="step.grow.input"
@@ -118,6 +130,13 @@ const regrow = () => { grown.value = 1; };
             <button class="btn ghost" type="button" @click="regrow">Start over</button>
           </div>
         </div>
+
+        <AlgoTrace
+          v-else-if="step.instrument"
+          ref="mini"
+          :problem="probFor(step.instrument)"
+          compact
+        />
 
         <div v-else-if="step.questions" class="lesson-qs">
           <div v-for="(q, i) in step.questions" :key="i" class="lesson-q">

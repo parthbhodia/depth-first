@@ -8,6 +8,9 @@ import { useNarration } from '~/composables/useNarration.js';
 
 const props = defineProps({
   problem: { type: Object, required: true },
+  // Embedded inside prose (a lesson): no tabs when there is one approach, no
+  // idea, no voice picker, and no claim on the global keyboard.
+  compact: { type: Boolean, default: false },
 });
 
 const approachId = ref(props.problem.approaches[0].id);
@@ -306,7 +309,7 @@ function onKey(e) {
   else if (e.key === 'v' || e.key === 'V') toggleNarration();
 }
 
-onMounted(() => window.addEventListener('keydown', onKey));
+onMounted(() => { if (!props.compact) window.addEventListener('keydown', onKey); });
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey);
   cancelSpeech();
@@ -314,8 +317,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="instrument" aria-label="Algorithm trace">
-    <div class="rig-head">
+  <section class="instrument" :class="{ compact }" aria-label="Algorithm trace">
+    <div v-if="!compact || problem.approaches.length > 1" class="rig-head">
       <div class="tabs" :class="{ 'tour-focus': focusZone === 'tabs' }">
         <button
           v-for="(a, i) in problem.approaches"
@@ -379,7 +382,7 @@ onBeforeUnmount(() => {
       </span>
     </div>
 
-    <p v-else-if="approach.watchFor" class="watchfor">
+    <p v-else-if="approach.watchFor && !compact" class="watchfor">
       <b>What to watch</b>{{ approach.watchFor }}
       <button v-if="tour.length" class="tourstart" type="button" @click="startTour">
         ✦ Take the guided tour
@@ -459,7 +462,7 @@ onBeforeUnmount(() => {
       <span>{{ frame ? frame.caption : '' }}</span>
     </p>
 
-    <div v-if="index === last && nextApproach" class="handoff">
+    <div v-if="!compact && index === last && nextApproach" class="handoff">
       <span>That's the whole trace.</span>
       <button class="btn primary" type="button" @click="goNext">
         Next: {{ nextApproach.name }} →
@@ -479,7 +482,7 @@ onBeforeUnmount(() => {
       >{{ p.name }}</button>
 
       <select
-        v-if="voiceSupported && voiceList.length"
+        v-if="!compact && voiceSupported && voiceList.length"
         v-model="voiceURI"
         class="voice"
         aria-label="Narration voice"
@@ -491,7 +494,7 @@ onBeforeUnmount(() => {
       </select>
     </div>
 
-    <p class="idea">
+    <p v-if="!compact" class="idea">
       <b>
         {{ approach.name }} — the idea
         <button

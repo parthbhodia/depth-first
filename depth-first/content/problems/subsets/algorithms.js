@@ -9,9 +9,11 @@
  *   callStack  — each frame carries its OWN index and i, because the whole
  *                idea people miss is that i is frozen per frame, not global.
  *
- *   loop    — the canonical form. One node per call, answers at every node.
- *   binary  — include/exclude. A perfect binary tree, answers only at leaves,
- *             which is where the 2^n count becomes literally visible.
+ *   binary  — include/exclude, the picture to understand it by. A perfect
+ *             binary tree, answers only at leaves, which is where the 2^n
+ *             count becomes literally visible. First tab.
+ *   loop    — the canonical interview form. One node per call, answers at
+ *             every node; the one that grows into 90, 39 and 77.
  *   bitmask — no recursion at all; the bits ARE the include/exclude decisions.
  */
 
@@ -28,21 +30,25 @@ const loopCode = {
         return res
 
     def backtrack(self, index, nums, curr, res):
+        # Q1 — complete answer? Every path is one: record it.
         res.append(list(curr))
 
+        # Q2 — what choices do I have? Everything right of index.
         for i in range(index, len(nums)):
             curr.append(nums[i])
             self.backtrack(i + 1, nums, curr, res)
             curr.pop()`,
-    anchors: { start: 4, call: 7, record: 8, loop: 10, choose: 11, recurse: 12, unchoose: 13, done: 5 },
+    anchors: { start: 4, call: 7, record: 9, loop: 12, choose: 13, recurse: 14, unchoose: 15, done: 5 },
   },
   javascript: {
     source: `var subsets = function(nums) {
     const res = [];
 
     const backtrack = (index, curr) => {
+        // Q1 — complete answer? Every path is one: record it.
         res.push([...curr]);
 
+        // Q2 — what choices do I have? Everything right of index.
         for (let i = index; i < nums.length; i++) {
             curr.push(nums[i]);
             backtrack(i + 1, curr);
@@ -53,7 +59,7 @@ const loopCode = {
     backtrack(0, []);
     return res;
 };`,
-    anchors: { start: 14, call: 4, record: 5, loop: 7, choose: 8, recurse: 9, unchoose: 10, done: 15 },
+    anchors: { start: 16, call: 4, record: 6, loop: 9, choose: 10, recurse: 11, unchoose: 12, done: 17 },
   },
   java: {
     source: `class Solution {
@@ -65,8 +71,10 @@ const loopCode = {
 
     private void backtrack(int index, int[] nums,
                            List<Integer> curr, List<List<Integer>> res) {
+        // Q1 — complete answer? Every path is one: record it.
         res.add(new ArrayList<>(curr));
 
+        // Q2 — what choices do I have? Everything right of index.
         for (int i = index; i < nums.length; i++) {
             curr.add(nums[i]);
             backtrack(i + 1, nums, curr, res);
@@ -74,7 +82,7 @@ const loopCode = {
         }
     }
 }`,
-    anchors: { start: 4, call: 8, record: 10, loop: 12, choose: 13, recurse: 14, unchoose: 15, done: 5 },
+    anchors: { start: 4, call: 8, record: 11, loop: 14, choose: 15, recurse: 16, unchoose: 17, done: 5 },
   },
   cpp: {
     source: `class Solution {
@@ -88,8 +96,10 @@ public:
 
     void backtrack(int index, vector<int>& nums,
                    vector<int>& curr, vector<vector<int>>& res) {
+        // Q1 — complete answer? Every path is one: record it.
         res.push_back(curr);
 
+        // Q2 — what choices do I have? Everything right of index.
         for (int i = index; i < nums.size(); i++) {
             curr.push_back(nums[i]);
             backtrack(i + 1, nums, curr, res);
@@ -97,7 +107,7 @@ public:
         }
     }
 };`,
-    anchors: { start: 6, call: 10, record: 12, loop: 14, choose: 15, recurse: 16, unchoose: 17, done: 7 },
+    anchors: { start: 6, call: 10, record: 13, loop: 16, choose: 17, recurse: 18, unchoose: 19, done: 7 },
   },
 };
 
@@ -110,27 +120,31 @@ const binaryCode = {
         return res
 
     def dfs(self, i, nums, curr, res):
+        # Q1 — complete answer? Every element decided.
         if i == len(nums):
             res.append(list(curr))
             return
 
+        # Q2 — what choices do I have? Take nums[i], or skip it.
         curr.append(nums[i])
         self.dfs(i + 1, nums, curr, res)
 
         curr.pop()
         self.dfs(i + 1, nums, curr, res)`,
-    anchors: { start: 4, call: 7, base: 8, record: 9, include: 12, recurseIn: 13, exclude: 15, recurseEx: 16, done: 5 },
+    anchors: { start: 4, call: 7, base: 9, record: 10, include: 14, recurseIn: 15, exclude: 17, recurseEx: 18, done: 5 },
   },
   javascript: {
     source: `var subsets = function(nums) {
     const res = [];
 
     const dfs = (i, curr) => {
+        // Q1 — complete answer? Every element decided.
         if (i === nums.length) {
             res.push([...curr]);
             return;
         }
 
+        // Q2 — what choices do I have? Take nums[i], or skip it.
         curr.push(nums[i]);
         dfs(i + 1, curr);
 
@@ -141,7 +155,7 @@ const binaryCode = {
     dfs(0, []);
     return res;
 };`,
-    anchors: { start: 17, call: 4, base: 5, record: 6, include: 10, recurseIn: 11, exclude: 13, recurseEx: 14, done: 18 },
+    anchors: { start: 19, call: 4, base: 6, record: 7, include: 12, recurseIn: 13, exclude: 15, recurseEx: 16, done: 20 },
   },
   java: {
     source: `class Solution {
@@ -153,11 +167,13 @@ const binaryCode = {
 
     private void dfs(int i, int[] nums,
                      List<Integer> curr, List<List<Integer>> res) {
+        // Q1 — complete answer? Every element decided.
         if (i == nums.length) {
             res.add(new ArrayList<>(curr));
             return;
         }
 
+        // Q2 — what choices do I have? Take nums[i], or skip it.
         curr.add(nums[i]);
         dfs(i + 1, nums, curr, res);
 
@@ -165,7 +181,7 @@ const binaryCode = {
         dfs(i + 1, nums, curr, res);
     }
 }`,
-    anchors: { start: 4, call: 8, base: 10, record: 11, include: 15, recurseIn: 16, exclude: 18, recurseEx: 19, done: 5 },
+    anchors: { start: 4, call: 8, base: 11, record: 12, include: 17, recurseIn: 18, exclude: 20, recurseEx: 21, done: 5 },
   },
   cpp: {
     source: `class Solution {
@@ -179,11 +195,13 @@ public:
 
     void dfs(int i, vector<int>& nums,
              vector<int>& curr, vector<vector<int>>& res) {
+        // Q1 — complete answer? Every element decided.
         if (i == nums.size()) {
             res.push_back(curr);
             return;
         }
 
+        // Q2 — what choices do I have? Take nums[i], or skip it.
         curr.push_back(nums[i]);
         dfs(i + 1, nums, curr, res);
 
@@ -191,7 +209,7 @@ public:
         dfs(i + 1, nums, curr, res);
     }
 };`,
-    anchors: { start: 6, call: 10, base: 12, record: 13, include: 17, recurseIn: 18, exclude: 20, recurseEx: 21, done: 7 },
+    anchors: { start: 6, call: 10, base: 13, record: 14, include: 19, recurseIn: 20, exclude: 22, recurseEx: 23, done: 7 },
   },
 };
 
@@ -595,36 +613,36 @@ function bitmaskFrames(nums) {
 
 export const approaches = [
   {
+    id: 'binary',
+    name: 'Include / exclude',
+    tagline: 'One question per number: in, or out? The picture to understand it by.',
+    watchFor:
+      'Watch the bottom row: every leaf is one subset and there are exactly 2ⁿ of them. And watch curr.pop() between the two branches — that one line is what lets a single list walk every path.',
+    idea:
+      'Ask one question per number: in, or out? That draws a tree with one level per number, and the answers sit at the bottom — exactly 2ⁿ leaves. '
+      + 'The two comments in the code are the whole design. Q1: the answer is complete when every number has been decided. Q2: the choices are take it, or skip it. It is the easiest picture to understand, and the one most explanations draw.',
+    time: 'O(n · 2ⁿ)',
+    space: 'O(n)',
+    spaceNote: 'An n-deep stack. The tree has 2ⁿ⁺¹ − 1 nodes but only 2ⁿ of them produce anything.',
+    stackPanel: 'call',
+    code: binaryCode,
+    build: binaryFrames,
+  },
+  {
     id: 'loop',
-    name: 'Backtracking',
-    tagline: 'Choose, explore, un-choose — the form that generalises.',
+    name: 'Loop over the rest',
+    tagline: 'The interview form: choose, explore, un-choose — and it generalises.',
     watchFor:
       'Watch curr in the State panel, and watch i in each stack frame. curr returns to exactly what it was before every choice; i picks up exactly where it left off.',
     idea:
-      'Keep one shared list. Add a number, explore everything that can follow it, then take the number back out. After that pop, curr is exactly what it was before — so the next choice starts clean. '
-      + 'The index is what stops us from making [1,3] and then [3,1] again: each call may only pick numbers to the right of the one just taken.',
+      'Same two questions, different answers. Q1: every path is a complete answer, so record on arrival — there is no separate stop. Q2: the choices are everything to the right of index, which is what stops [1,3] and [3,1] both being generated. '
+      + 'Keep one shared list: add a number, explore everything that can follow it, then pop it back off so the next choice starts clean. This is the form to write in an interview — Subsets II, Combination Sum and Combinations are all edits to it.',
     time: 'O(n · 2ⁿ)',
     space: 'O(n)',
     spaceNote: 'The stack is at most n + 1 deep and curr holds at most n values — the 2ⁿ is time, not memory.',
     stackPanel: 'call',
     code: loopCode,
     build: loopFrames,
-  },
-  {
-    id: 'binary',
-    name: 'Include / exclude',
-    tagline: 'Two choices per element. The 2ⁿ becomes something you can count.',
-    watchFor:
-      'Watch the bottom row. Every leaf is one subset and there are exactly 2ⁿ of them — that is the whole complexity argument, visible.',
-    idea:
-      'Instead of looping over what is left, ask one question per number: in, or out? That draws a tree with one level per number, and the answers sit at the bottom. '
-      + 'It is the easiest picture to understand — but the loop version is the one you grow into Combinations, Subsets II and Combination Sum.',
-    time: 'O(n · 2ⁿ)',
-    space: 'O(n)',
-    spaceNote: 'Same n-deep stack. The tree has 2ⁿ⁺¹ − 1 nodes but only 2ⁿ of them produce anything.',
-    stackPanel: 'call',
-    code: binaryCode,
-    build: binaryFrames,
   },
   {
     id: 'bitmask',

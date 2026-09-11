@@ -681,3 +681,11 @@ svg.calltree { display: block; max-width: none; }
 .lesson-credit { font-size: 12.5px; color: var(--ink-3); text-align: center; }
 .lesson-credit a { color: var(--brand-ink); }
 .instrument { scroll-margin-top: 76px; }
+
+/* A lesson step can hold a whole instrument; give it the full width. */
+.lesson-body.wide { grid-template-columns: minmax(0, 1fr); }
+.lesson-body.wide .lesson-prose { max-width: 62ch; }
+.instrument.compact { margin-top: 0; box-shadow: none; }
+.instrument.compact .canvas-hold { min-height: 170px; }
+.instrument.compact .transport.top { padding: 10px 14px; }
+.instrument.compact .stage-body { padding-bottom: 0; }

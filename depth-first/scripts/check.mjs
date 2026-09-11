@@ -6,7 +6,8 @@
  * For each problem, for each declared input, run every approach and compare
  * with that problem's reference implementation. Then assert that every frame's
  * anchor resolves to a real line in every language, and that any call tree the
- * approach produced is structurally sound.
+ * approach produced is structurally sound. A lesson's warm-up problem gets the
+ * same treatment, and every pointer a lesson makes into an instrument must land.
  */
 import { languages } from '#engine/languages.js';
 import { problems } from '#content/index.js';
@@ -14,35 +15,7 @@ import { problems } from '#content/index.js';
 let failures = 0;
 const fail = (msg) => { failures++; console.error('  FAIL  ' + msg); };
 
-for (const problem of problems) {
-  console.log(`\n${problem.number} — ${problem.title}  [${problem.stage}]`);
-
-  // A lesson is prose that points INTO the instrument. Every pointer must land.
-  if (problem.lesson) {
-    const dflt = problem.parseInput(problem.defaultInput);
-    const jumps = [problem.lesson.finish, ...problem.lesson.steps.flatMap((s) => s.jumps || [])].filter(Boolean);
-    for (const j of jumps) {
-      const a = problem.approaches.find((x) => x.id === j.approach);
-      if (!a) { fail(`lesson: unknown approach ${j.approach}`); continue; }
-      const frames = a.build(dflt).frames;
-      if (j.at && j.at.anchor && !frames.some((f) => f.anchor === j.at.anchor)) fail(`lesson: no frame with anchor ${j.at.anchor} in ${a.id}`);
-      if (typeof j.at === "number" && j.at >= frames.length) fail(`lesson: frame ${j.at} is past the end of ${a.id} (${frames.length} frames)`);
-    }
-    for (const s of problem.lesson.steps) {
-      for (const g of [s.figure, s.grow].filter(Boolean)) {
-        if (!problem.approaches.some((x) => x.id === g.approach)) fail(`lesson: unknown approach ${g.approach} in "${s.title}"`);
-      }
-      if (s.parts) {
-        const a = problem.approaches.find((x) => x.id === s.approach);
-        if (!a) { fail(`lesson: unknown approach ${s.approach} in "${s.title}"`); continue; }
-        for (const p of s.parts) for (const an of p.anchors) for (const lang of languages) {
-          if (!a.code[lang.id] || !a.code[lang.id].anchors[an]) fail(`lesson: anchor ${an} missing in ${a.id}/${lang.id}`);
-        }
-      }
-    }
-    console.log(`  lesson     ok — ${problem.lesson.steps.length} steps, ${jumps.length} jumps`);
-  }
-
+function checkProblem(problem) {
   for (const raw of problem.checkInputs) {
     const input = problem.parseInput(raw);
     const expected = problem.reference(input);
@@ -107,6 +80,54 @@ for (const problem of problems) {
     const extra = nodes && nodes.length ? `, ${nodes.length} calls` : '';
     console.log(`  ${approach.id.padEnd(10)} ok — ${frames.length} frames${extra} on the default input`);
   }
+}
+
+// A lesson is prose that points INTO an instrument. Every pointer must land:
+// the approach exists, the frame exists, the anchor exists in every language.
+function checkLesson(problem) {
+  const lesson = problem.lesson;
+  const probFor = (ref) => (ref && ref.problem === 'warmup' ? lesson.warmup : problem);
+  const framesOf = (p, approachId) => {
+    const a = p.approaches.find((x) => x.id === approachId);
+    return a ? a.build(p.parseInput(p.defaultInput)).frames : null;
+  };
+
+  const jumps = [lesson.finish, ...lesson.steps.flatMap((s) => (s.jumps || []).map((j) => ({ ...j, _step: s.title })))].filter(Boolean);
+  for (const j of jumps) {
+    const p = j.target === 'warmup' ? lesson.warmup : problem;
+    const frames = framesOf(p, j.approach);
+    if (!frames) { fail(`lesson: unknown approach ${j.approach} in "${j._step || 'finish'}"`); continue; }
+    if (typeof j.at === "object" && j.at.anchor && !frames.some((f) => f.anchor === j.at.anchor)) fail(`lesson: no frame with anchor ${j.at.anchor} in ${j.approach}`);
+    if (typeof j.at === 'number' && j.at >= frames.length) fail(`lesson: frame ${j.at} is past the end of ${j.approach} (${frames.length} frames)`);
+  }
+  for (const s of lesson.steps) {
+    for (const g of [s.figure, s.grow, s.instrument].filter(Boolean)) {
+      const p = probFor(g);
+      if (g.approach && !p.approaches.some((x) => x.id === g.approach)) fail(`lesson: unknown approach ${g.approach} in "${s.title}"`);
+      if (typeof g.at === "object" && g.at.anchor && !framesOf(p, g.approach).some((f) => f.anchor === g.at.anchor)) fail(`lesson: figure anchor ${g.at.anchor} missing in "${s.title}"`);
+    }
+    if (s.parts) {
+      const p = probFor(s);
+      const a = p.approaches.find((x) => x.id === s.approach);
+      if (!a) { fail(`lesson: unknown approach ${s.approach} in "${s.title}"`); continue; }
+      for (const part of s.parts) for (const an of part.anchors) for (const lang of languages) {
+        if (!a.code[lang.id] || !a.code[lang.id].anchors[an]) fail(`lesson: anchor ${an} missing in ${a.id}/${lang.id}`);
+      }
+    }
+  }
+  console.log(`  lesson     ok — ${lesson.steps.length} steps, ${jumps.length} jumps`);
+}
+
+for (const problem of problems) {
+  console.log(`\n${problem.number} — ${problem.title}  [${problem.stage}]`);
+  if (problem.lesson) {
+    if (problem.lesson.warmup) {
+      console.log(`  warm-up: ${problem.lesson.warmup.title}`);
+      checkProblem(problem.lesson.warmup);
+    }
+    checkLesson(problem);
+  }
+  checkProblem(problem);
 }
 
 console.log(failures === 0 ? '\nAll checks passed.\n' : `\n${failures} failure(s).\n`);
