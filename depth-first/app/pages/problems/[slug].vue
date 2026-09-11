@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { problemBySlug } from '#content/index.js';
 
 const route = useRoute();
@@ -27,6 +27,13 @@ useSeoMeta({
   twitterImage: `${config.public.siteUrl}/og.png`,
   twitterCard: 'summary_large_image',
 });
+
+// The lesson hands off to the instrument: land on a frame, or play.
+const trace = ref(null);
+function onJump(target) {
+  trace.value?.jumpTo(target);
+  document.getElementById('trace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 // One idea stays open. Everything else is one click away — the exemplars
 // (Red Blob, Ciechanowski) never run more than ~150-300 words without a visual,
@@ -70,7 +77,9 @@ useHead({
       <p class="lede short" v-html="problem.blurb" />
     </header>
 
-    <AlgoTrace :problem="problem" />
+    <PatternLesson v-if="problem.lesson" :problem="problem" :lesson="problem.lesson" @jump="onJump" />
+
+    <AlgoTrace id="trace" ref="trace" :problem="problem" />
 
     <article class="essay lead">
       <section>

@@ -22,6 +22,8 @@ import subsets from './problems/subsets/index.js';
  *   checkInputs  input strings to verify against
  *   verify       (input, built) => error string | null — optional deep check
  *                for problems whose answer is a collection, not a number
+ *   lesson       optional intuition-first stepper shown above the trace; its
+ *                jumps and annotated code refer to approaches and anchors
  */
 export const problems = [maxDepthBinaryTree, countGoodNodes, climbingStairs, subsets, consistentHashing];
 

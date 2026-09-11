@@ -261,6 +261,24 @@ function endTour() {
   cancelSpeech();
 }
 
+// A lesson above the instrument can drive it: switch approach, land on a
+// frame, or play from the top. Same mechanics as a tour stop.
+function jumpTo(target) {
+  if (!target) return;
+  if (target.approach && target.approach !== approachId.value) approachId.value = target.approach;
+  started.value = true;
+  nextTick(() => {
+    cancelSpeech();
+    if (target.play) {
+      restart();
+      if (!playing.value) toggle();
+      return;
+    }
+    stop2(target);
+  });
+}
+defineExpose({ jumpTo });
+
 function goNext() {
   if (!nextApproach.value) return;
   approachId.value = nextApproach.value.id;

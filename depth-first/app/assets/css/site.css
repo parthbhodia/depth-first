@@ -597,3 +597,87 @@ svg.calltree { display: block; max-width: none; }
 .rig.touring .dp.tour-focus {
   outline: 2px solid var(--brand); outline-offset: -2px; border-radius: 3px;
 }
+
+/* ---------- lesson: intuition before the instrument ---------- */
+
+.lesson {
+  margin-top: 30px; padding: 18px 22px 16px;
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--paper);
+}
+.lesson-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.lesson-head h2 {
+  font-size: 12px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--brand-ink); margin: 0;
+}
+.lesson-dots { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; }
+.lesson-dots button {
+  font: inherit; font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700;
+  width: 26px; height: 26px; border-radius: 99px; cursor: pointer;
+  border: 1px solid var(--rule-2); background: transparent; color: var(--ink-3);
+}
+.lesson-dots button:hover { color: var(--brand-ink); border-color: var(--brand); }
+.lesson-dots button[aria-current="step"] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+.lesson-thesis {
+  margin: 10px 0 0; font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; font-stretch: 112%;
+  letter-spacing: -.016em; line-height: 1.15; max-width: 30ch; text-wrap: balance;
+}
+.lesson-body {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 22px 32px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rule);
+  align-items: start;
+}
+@media (max-width: 860px) { .lesson-body { grid-template-columns: minmax(0, 1fr); } }
+.lesson-stepno {
+  margin: 0; font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+}
+.lesson-text h3 {
+  margin: 6px 0 0; font-size: 22px; font-weight: 700; font-stretch: 106%;
+  letter-spacing: -.012em; line-height: 1.2; text-wrap: balance;
+}
+.lesson-prose {
+  font-family: "Newsreader", Georgia, serif; font-size: 17px; line-height: 1.6;
+  color: var(--ink-2); max-width: 46ch;
+}
+.lesson-prose p { margin: 10px 0 0; }
+.lesson-prose code { font-size: 14px; }
+.lesson-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.lesson-visual { min-width: 0; }
+.lesson-visual .tracefig { margin-top: 0; max-width: none; }
+.lesson-code {
+  border: 1px solid var(--rule); border-radius: 4px; background: var(--code-bg);
+  padding: 10px 0 12px;
+}
+.lesson-grow .tracefig { margin: 0; }
+.lesson-growbar { display: flex; gap: 8px; margin-top: 10px; }
+.lesson-qs { display: grid; gap: 10px; }
+.lesson-q {
+  padding: 14px 16px 14px 18px; border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--panel); box-shadow: inset 3px 0 0 var(--brand);
+}
+.lesson-qn {
+  font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; color: var(--brand-ink); display: block;
+}
+.lesson-q b { display: block; margin-top: 2px; font-size: 16px; letter-spacing: -.008em; }
+.lesson-q p {
+  margin: 6px 0 0; font-family: "Newsreader", Georgia, serif; font-size: 15.5px;
+  line-height: 1.55; color: var(--ink-2);
+}
+.lesson-parts .cl.part { box-shadow: inset 3px 0 0 var(--part); background: color-mix(in srgb, var(--part) 9%, transparent); }
+.lesson-parts .p0, .lesson-partkey .p0 { --part: var(--done); }
+.lesson-parts .p1, .lesson-partkey .p1 { --part: var(--brand); }
+.lesson-parts .p2, .lesson-partkey .p2 { --part: var(--active); }
+.lesson-partkey { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.lesson-partkey li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; align-items: baseline;
+  padding-left: 12px; box-shadow: inset 3px 0 0 var(--part); font-size: 13.5px; color: var(--ink-2);
+}
+.lesson-partkey b { color: var(--ink); }
+.lesson-nav {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule);
+}
+.lesson-credit { font-size: 12.5px; color: var(--ink-3); text-align: center; }
+.lesson-credit a { color: var(--brand-ink); }
+.instrument { scroll-margin-top: 76px; }

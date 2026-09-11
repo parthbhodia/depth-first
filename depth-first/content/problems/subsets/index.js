@@ -130,6 +130,123 @@ export default {
       text: 'Go back to the first tab for anything real, though. The bitmask cannot prune, and pruning is the whole point the moment a problem adds a constraint.' },
   ],
 
+  /**
+   * Read before the instrument. Intuition first, then the two questions that
+   * write the code, then the code, then the trace. The visuals are frames of
+   * the real run and lines of the real source, resolved by anchor.
+   */
+  lesson: {
+    kicker: 'Backtracking, from zero',
+    heading: 'It is not a new algorithm. It is DFS on a tree you build as you go.',
+    credit: 'Sequence after <a href="https://www.youtube.com/watch?v=Ak-fxEwAR14" target="_blank" rel="noopener">AlgoMonster\'s backtracking tutorial</a>; the pictures are this page\'s own trace.',
+    finish: { approach: 'loop', play: true, label: 'Play the trace' },
+    steps: [
+      {
+        title: 'Why loops cannot do this',
+        html: `
+          <p>You can list the pairs with two loops and the triples with three. But a subset can be
+          any size from 0 to <code>n</code>, so you would need a separate loop nest for every size —
+          and <code>n</code> is not known until the input arrives.</p>
+          <p>Nobody can write that program. The depth of the looping has to follow the input, and
+          the tool for "as deep as the input needs" is recursion.</p>`,
+        snippet: {
+          lang: 'python',
+          source: `for i in range(n):                  # size 1
+    for j in range(i + 1, n):       # size 2
+        for k in range(j + 1, n):   # size 3
+            ...                     # size 4 needs a fourth loop,
+                                    # size n needs n of them`,
+        },
+      },
+      {
+        title: 'Draw the tree',
+        html: `
+          <p>Start with nothing chosen. From there the choices are 1, 2 or 3. From <code>[1]</code>
+          the choices are 2 or 3. From <code>[1,2]</code>, only 3. Keep going and you have drawn a
+          tree — and every node on it is a subset.</p>
+          <p>That changes the question. Not "how do I generate all subsets?" but "how do I visit every
+          node of this tree?"</p>`,
+        figure: { approach: 'loop', at: 'last', caption: 'The whole tree for [1,2,3]. Eight nodes, eight subsets — the tree is the answer.' },
+      },
+      {
+        title: 'It is just DFS',
+        html: `
+          <p>You already know how to visit every node of a tree: depth-first, the same recursion as
+          Maximum Depth. The one twist is that this tree is not handed to you. It does not exist until
+          you build it, one choice at a time.</p>
+          <p>Press <b>Grow</b>. Each node appears at the moment the DFS reaches it — the walk and the
+          building are the same act.</p>`,
+        grow: { approach: 'loop' },
+      },
+      {
+        title: 'What pop() actually does',
+        html: `
+          <p>Deep in the tree, <code>curr</code> is <code>[1,2,3]</code>. The next subset to find is
+          <code>[1,3]</code> — but <code>curr</code> still holds the 2. There is only one
+          <code>curr</code>, shared by every call, so the only way to try a different branch is to
+          take back the last choice.</p>
+          <p>That is <code>pop()</code>. It is not tidying up; it is the mechanism that moves you to
+          the next branch. Without it the walk goes forward forever.</p>`,
+        jumps: [
+          { approach: 'loop', at: { anchor: 'unchoose' }, label: 'Watch step 17: pop the 3' },
+          { approach: 'loop', at: 19, label: 'Step 20: pop the 2, then choose 3' },
+        ],
+      },
+      {
+        title: 'Two questions before any code',
+        html: `
+          <p>Every backtracking problem is these two answers plugged into the same skeleton. Answer
+          them out loud before you write a line — in an interview, that sentence is the design.</p>
+          <p>For the video's A/B strings, Q1 is "the path has length n" and Q2 is "add A or add B".
+          Subsets answers them differently, and that is the whole difference.</p>`,
+        questions: [
+          { q: 'When is the answer complete?',
+            a: 'Immediately — every path is a valid subset, so record it on arrival, before choosing anything. There is no separate stop: when <code>index</code> reaches the end, the loop simply has nothing left to offer.' },
+          { q: 'What choices do I have from here?',
+            a: 'Any element to the right of the last one taken: <code>nums[index]</code>, <code>nums[index + 1]</code>, … Never look left, and no subset is ever generated twice.' },
+        ],
+      },
+      {
+        title: 'Three parts of the code',
+        html: `
+          <p>The two answers become three parts. Record, because Q1 says every node is complete.
+          Loop over the choices and go deeper, because that is Q2. And after every call, un-choose —
+          the pop that puts you back exactly where you were before the choice.</p>
+          <p>That is the entire function. Every backtracking solution you will write has this shape.</p>`,
+        approach: 'loop',
+        lang: 'python',
+        parts: [
+          { label: 'Record', note: 'Q1 — every node is complete, so save on arrival', anchors: ['record'] },
+          { label: 'Choose, go deeper', note: 'Q2 — the loop is the list of choices', anchors: ['loop', 'choose', 'recurse'] },
+          { label: 'Un-choose', note: 'the pop — back to the state before the choice', anchors: ['unchoose'] },
+        ],
+      },
+      {
+        title: 'Now watch it run',
+        html: `
+          <p>Play the trace and read the call stack panel while it runs. Each frame owns its own
+          <code>i</code>; <code>curr</code> is one list that every frame can see; <code>res</code>
+          gains an entry at every node, not just at the bottom.</p>
+          <p>The guided tour stops at exactly the moments above, if you would rather be walked
+          through it.</p>`,
+        jumps: [
+          { approach: 'loop', play: true, label: 'Play the trace' },
+          { approach: 'loop', at: { anchor: 'record' }, label: 'Jump to the first record' },
+        ],
+      },
+      {
+        title: 'How to spot it',
+        html: `
+          <p>"Generate all…", "return every…", "all combinations of…", "all possible…" — when a
+          problem asks for every way something can be built, draw the tree, answer the two
+          questions, write the three parts.</p>
+          <p>Then the family: Subsets II changes one line of Q2, Permutations changes Q2 and moves the
+          record to the leaves, Combination Sum adds a reason to stop early. The skeleton never
+          changes.</p>`,
+      },
+    ],
+  },
+
   approaches,
   approachById,
 

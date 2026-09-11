@@ -17,6 +17,32 @@ const fail = (msg) => { failures++; console.error('  FAIL  ' + msg); };
 for (const problem of problems) {
   console.log(`\n${problem.number} — ${problem.title}  [${problem.stage}]`);
 
+  // A lesson is prose that points INTO the instrument. Every pointer must land.
+  if (problem.lesson) {
+    const dflt = problem.parseInput(problem.defaultInput);
+    const jumps = [problem.lesson.finish, ...problem.lesson.steps.flatMap((s) => s.jumps || [])].filter(Boolean);
+    for (const j of jumps) {
+      const a = problem.approaches.find((x) => x.id === j.approach);
+      if (!a) { fail(`lesson: unknown approach ${j.approach}`); continue; }
+      const frames = a.build(dflt).frames;
+      if (j.at && j.at.anchor && !frames.some((f) => f.anchor === j.at.anchor)) fail(`lesson: no frame with anchor ${j.at.anchor} in ${a.id}`);
+      if (typeof j.at === "number" && j.at >= frames.length) fail(`lesson: frame ${j.at} is past the end of ${a.id} (${frames.length} frames)`);
+    }
+    for (const s of problem.lesson.steps) {
+      for (const g of [s.figure, s.grow].filter(Boolean)) {
+        if (!problem.approaches.some((x) => x.id === g.approach)) fail(`lesson: unknown approach ${g.approach} in "${s.title}"`);
+      }
+      if (s.parts) {
+        const a = problem.approaches.find((x) => x.id === s.approach);
+        if (!a) { fail(`lesson: unknown approach ${s.approach} in "${s.title}"`); continue; }
+        for (const p of s.parts) for (const an of p.anchors) for (const lang of languages) {
+          if (!a.code[lang.id] || !a.code[lang.id].anchors[an]) fail(`lesson: anchor ${an} missing in ${a.id}/${lang.id}`);
+        }
+      }
+    }
+    console.log(`  lesson     ok — ${problem.lesson.steps.length} steps, ${jumps.length} jumps`);
+  }
+
   for (const raw of problem.checkInputs) {
     const input = problem.parseInput(raw);
     const expected = problem.reference(input);
