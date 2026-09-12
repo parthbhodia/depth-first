@@ -23,7 +23,7 @@ const built = computed(() => props.approach.build(parsed.value));
 // What the trace actually did.
 const m = computed(() => {
   const frames = built.value.frames;
-  const nodes = built.value.nodes || [];
+  const nodes = (built.value.nodes || []).filter((n) => !n.phantom);
   const byDepth = [];
   nodes.forEach((n) => { byDepth[n.depth] = (byDepth[n.depth] || 0) + 1; });
   const levels = Array.from(byDepth, (c) => c || 0);

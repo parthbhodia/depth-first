@@ -41,7 +41,7 @@ export default {
   title: 'Combination Sum',
   difficulty: 'Medium',
   topics: ['Backtracking', 'Array'],
-  pattern: 'Backtracking — reuse, and the first real pruning',
+  pattern: 'Backtracking — one character from Subsets',
 
   stage: 'call-tree',
   inputLabel: 'candidates | target',
@@ -61,7 +61,8 @@ export default {
   checkInputs: ['2,3,6,7 | 7', '2,3,5 | 8', '2 | 1', '3,5 | 8', '2,3 | 6', '7,3,2 | 7'],
 
   /** Labels like [2,2,3] need the wider nodes Subsets uses. */
-  callLayout: { nodeW: 84, xGap: 96 },
+  /** Two-line nodes: the combination, and what is left of the target. */
+  callLayout: { nodeW: 84, xGap: 96, nodeH: 36 },
 
   video: {
     // Chosen by the site owner; title and author verified via YouTube oEmbed.
@@ -82,7 +83,7 @@ export default {
   ],
 
   blurb:
-    'Subsets with a target: a candidate may be reused, an answer is only complete when the total hits the target, and for the first time a branch can be a dead end.',
+    'Subsets with a target, one character apart: recurse on i instead of i + 1 and a candidate may be reused; an answer is complete only when the target is met, and for the first time a branch can be wrong.',
 
   lede:
     'Three things change from Subsets, and the trace shows each one: recursing with the <em>same</em> index is what allows reuse, the running <code>total</code> is what decides when an answer is complete, and a total past the target is the first branch you are allowed to abandon. Watch the frames that return with nothing recorded — that is pruning.',
@@ -105,32 +106,120 @@ export default {
     '1 <= target <= 40',
   ],
 
-  defaultInput: '2,3,6,7 | 7',
+  defaultInput: '2,3 | 6',
   presets: [
+    { name: '[2,3] → 6 (smallest proof)', arr: '2,3 | 6' },
     { name: '[2,3,6,7] → 7', arr: '2,3,6,7 | 7' },
     { name: '[2,3,5] → 8', arr: '2,3,5 | 8' },
     { name: '[2] → 1 (none)', arr: '2 | 1' },
-    { name: '[3,5] → 8', arr: '3,5 | 8' },
   ],
 
-  badgeLabels: { dfs: 'Combinations below', loop: 'Combinations below' },
+  badgeLabels: { loop: 'Combinations below', sorted: 'Combinations below', dfs: 'Combinations below' },
 
   tour: [
     { focus: 'tabs', approach: 'loop',
-      text: 'Two tabs, one answer. The first is the form to write in an interview; the second is the picture most videos draw, dead ends and all.' },
+      text: 'Three tabs, one answer. The first is Subsets’ loop minus one character; the second adds a sort so the loop can stop early; the third is the picture most videos draw, dead ends and all.' },
     { focus: 'code', approach: 'loop',
-      text: 'The two comments again. Q1: is the answer complete? Only when total equals the target. Q2: any candidate from start on — and the recursive call passes j, not j + 1, so a candidate may be chosen again.' },
+      text: 'Two exits, then the loop. Q1: target exactly 0 — record and return. Then: target below 0 — return, this branch overshot. And the recursive call passes i, not i + 1. That is the one character.' },
     { focus: 'stage', approach: 'loop', play: true,
-      text: 'Play it. Ten nodes for the whole search, and not one of them is past the target: the sorted break stops each loop the moment a candidate would overshoot.' },
-    { focus: 'stack', approach: 'loop', at: { anchor: 'choose' },
-      text: 'The reuse. Read the new frame\u2019s start: the same j its parent is on. That single unchanged number is what lets 2 be chosen three times in a row.' },
+      text: 'Play it. Nine nodes: two record, two are pruned on arrival, and every node carries what is left of the target.' },
+    { focus: 'stack', approach: 'loop', at: { anchor: 'recurse', match: (f) => f.mark === 'first' },
+      text: 'The one character. Read the new frame’s start: the same as its parent’s i. The floor did not move, so this frame may take the 2 again.' },
     { focus: 'stack', approach: 'loop', at: { anchor: 'prune' },
-      text: 'The prune. 6 + 2 would pass 7, and because the candidates are sorted, so would 3, 6 and 7 after it — the frame gives up on all of them at once.' },
+      text: 'Killed for being wrong. target is −1, so this frame returns without recording — a dead end, which Subsets never had.' },
+    { focus: 'stage', approach: 'sorted', play: true,
+      text: 'Sort, then break early: the same answers from seven nodes, because a frame gives up on every larger candidate the moment one overshoots.' },
     { focus: 'stage', approach: 'dfs', play: true,
-      text: 'Now the include/skip picture for the same input: fifty-five nodes, twenty-seven of them dead ends, for the same two answers. This is what pruning is worth.' },
+      text: 'The include/skip picture on the same input: one question per candidate, dead ends explored one at a time. Count the nodes.' },
     { focus: null, approach: 'loop', at: 'last',
-      text: 'Write the first tab in an interview. It becomes Combination Sum II by passing j + 1 and skipping equal neighbours, and Combinations by adding one line of pruning.' },
+      text: 'Write the first tab in an interview, then say the upgrade out loud: sort, and break. It becomes Combination Sum II by passing i + 1 and skipping equal neighbours.' },
   ],
+
+  /**
+   * Read before the instrument: the [2,3] → 6 walkthrough, the shortest input
+   * that shows reuse, a dead end and the floor at once. Every picture is the
+   * real trace, and the buttons land the embedded instrument on its frames.
+   */
+  lesson: {
+    kicker: 'Combination Sum, from Subsets',
+    heading: 'The same loop, minus one character.',
+    invite: 'One tiny input, three things to see: reuse, a dead end, and the floor. About three minutes.',
+    finish: { approach: 'loop', play: true, label: 'Play the trace' },
+    steps: [
+      {
+        title: 'Why [2,3] and a target of 6',
+        html: `
+          <p><code>candidates = [2, 3]</code>, <code>target = 6</code>. Small on purpose: it is
+          the shortest input that shows all three things at once — an element reused, a branch
+          killed for overshooting, and the floor that stops <code>[3,2]</code> ever being
+          built.</p>
+          <p>Nine nodes. Two of them record; two are pruned on arrival, drawn dashed. Each node
+          carries what is left of the target.</p>`,
+        figure: { approach: 'loop', at: 'last', input: '2,3 | 6',
+          caption: 'The whole search for [2,3] → 6. Answers: [2,2,2] and [3,3]. Dashed nodes overshot and returned with nothing.' },
+      },
+      {
+        title: 'The one character',
+        html: `
+          <p>Subsets recurses on <code>i + 1</code>. This recurses on <code>i</code>. That single
+          change is what turns "use each element at most once" into "reuse it as often as you
+          like" — watch <code>start</code> refuse to move on a push.</p>
+          <p>The other change is at the top: a frame asks two questions, not one, before it
+          tries any choices.</p>`,
+        approach: 'loop',
+        lang: 'python',
+        parts: [
+          { label: 'Two exits, not one', note: 'Q1 — target exactly 0: record and return. Then: target below 0, this branch overshot — return.', anchors: ['check', 'record', 'exit', 'prune', 'cut'] },
+          { label: 'The one character', note: 'backtrack(i, …), not i + 1 — the floor does not move, so the candidate may be taken again', anchors: ['recurse'] },
+          { label: 'Choose, un-choose', note: 'unchanged from Subsets', anchors: ['loop', 'choose', 'unchoose'] },
+        ],
+      },
+      {
+        title: 'Watch start refuse to move',
+        html: `
+          <p>The whole run, with the call stack beside the tree. Every frame carries its own
+          <code>start</code>, <code>target</code> and <code>i</code>. Jump to the moments that
+          matter, or step through with the arrows.</p>`,
+        instrument: { approach: 'loop', input: '2,3 | 6' },
+        jumps: [
+          { target: 'embedded', approach: 'loop', at: { anchor: 'recurse', match: (f) => f.mark === 'first' }, label: 'Jump to the one character', key: true },
+          { target: 'embedded', approach: 'loop', at: { anchor: 'record' }, label: 'Reuse: 6 → 4 → 2 → 0, recorded' },
+          { target: 'embedded', approach: 'loop', at: { anchor: 'prune' }, label: 'Killed for being wrong' },
+          { target: 'embedded', approach: 'loop', at: { anchor: 'recurse', match: (f) => f.mark === 'rose' }, label: 'The floor rises: no [3,2]' },
+          { target: 'embedded', approach: 'loop', play: true, label: 'Play it all' },
+        ],
+      },
+      {
+        title: 'Two exits, not one',
+        html: `
+          <p>Subsets recorded on arrival and could never be wrong. Here a frame can land exactly
+          on the target, or overshoot it, and the two need different answers — so the two
+          questions come first, before the loop.</p>`,
+        questions: [
+          { q: 'When is the answer complete?',
+            a: 'When <code>target</code> is exactly 0: we landed on it. Record <code>curr</code> and return at once — with nothing left to reach, every further choice can only overshoot, so continuing the loop would be pure waste.' },
+          { q: 'When is a branch wrong?',
+            a: 'When <code>target</code> is below 0: we overshot. Return without recording. The branch was killed for being wrong, not for running out of elements — that is new, and it is the first pruning you have seen.' },
+        ],
+      },
+      {
+        title: 'Then prune smarter',
+        html: `
+          <p>Nine nodes explored, two of them pruned on arrival. With a bigger target the pruned
+          share grows fast — which is exactly why sorting the candidates and breaking out of
+          the loop early is worth mentioning in an interview.</p>
+          <p>That is the second tab: the same two answers from seven nodes, because a frame
+          gives up on every larger candidate the moment one overshoots. The third tab is the
+          include/skip picture, for when someone draws it that way.</p>`,
+        figure: { approach: 'sorted', at: 'last', input: '2,3 | 6',
+          caption: 'Sorted, then break: seven nodes for the same two answers. No dead end is ever entered.' },
+        jumps: [
+          { approach: 'sorted', play: true, label: 'Play the sorted form' },
+          { approach: 'loop', play: true, label: 'Play the one-character form' },
+        ],
+      },
+    ],
+  },
 
   approaches,
   approachById,
@@ -138,89 +227,110 @@ export default {
   essay: [
     {
       kicker: 'The shape',
-      figure: { approach: 'loop', at: 'last', caption: 'Ten nodes for the whole search. Two of them record; none is past the target.' },
-      heading: 'Loop from start, recurse on j, and stop early',
+      figure: { approach: 'loop', at: 'last', caption: 'Subsets’ loop with the recursive call on i. Nine nodes for [2,3] → 6; the dashed two overshot.' },
+      heading: 'The same loop, minus one character',
       html: `
         <p>
-          This is Subsets\u2019 loop with two edits, and the trace shows both. The recursive call
-          passes <code>j</code>, not <code>j + 1</code>: a candidate may be chosen again, which
-          is why the child frame\u2019s <code>start</code> equals its parent\u2019s <code>j</code>.
-          And Q1 is a real check for the first time: a path is an answer only when
-          <code>total == target</code>, so the running total travels down the stack as a
-          parameter, exactly as every Subsets frame owned its own <code>i</code>.
+          Subsets recurses on <code>i + 1</code>. This recurses on <code>i</code>. That single
+          change is what turns "use each element at most once" into "reuse it as often as you
+          like": the child's <code>start</code> is its parent's <code>i</code>, the floor does
+          not move, and the same candidate is on the table again. Open the stack panel on a
+          push and read the two frames — that unchanged number is the reuse.
         </p>
         <p>
-          Sorting first buys the third thing: the moment <code>total + candidates[j]</code>
-          would pass the target, <code>break</code>. Every later candidate is larger, so none
-          of them can help either. That one line is the difference between this tree and the
-          fifty-five-node one on the second tab.
+          The floor still does its old job. When the loop advances to <code>i = 1</code> and
+          takes the 3, the child's <code>start</code> becomes 1 and the 2 is out of reach, which
+          is what stops <code>[2,3]</code> and <code>[3,2]</code> both existing — the same
+          duplicate-prevention Subsets used, untouched.
         </p>
         <p>
-          The copy still matters — <code>res.append(list(cur))</code>, never
-          <code>cur</code> — and so does the pop after every call. Loop from
-          <code>start</code>, not from <code>0</code>, and <code>[2,3]</code> and
-          <code>[3,2]</code> are never both generated.
+          Q1 is a real check for the first time. In Subsets every path was an answer; here a
+          frame asks two questions before choosing anything. Is <code>target</code> exactly 0 —
+          record and return, because every further choice could only overshoot. Is it below 0 —
+          return without recording. Those frames are the dashed nodes: killed for being wrong,
+          not for running out of elements. Subsets had no way to be wrong.
         </p>
       `,
     },
     {
       kicker: 'What changed from Subsets',
-      figure: { approach: 'loop', at: { anchor: 'choose' }, caption: 'The reuse: the frame about to be pushed will start at the same j its parent is on.' },
+      figure: { approach: 'loop', at: { anchor: 'recurse', match: (f) => f.mark === 'first' }, caption: 'The first push: the new frame’s start equals its parent’s i. The floor did not move.' },
       heading: 'Three edits, each visible',
       html: `
         <p>
-          <strong>Reuse</strong> is one character. Subsets recursed with <code>i + 1</code>
-          because each element could be taken at most once; here the call passes
-          <code>j</code>. Open the stack panel on a choose step and read the locals: the new
-          frame\u2019s <code>start</code> equals the parent\u2019s <code>j</code>. Change it back to
-          <code>j + 1</code> and you have Combination Sum II\u2019s shape, minus its duplicate handling.
+          <strong>Reuse</strong> is one character. Subsets passed <code>i + 1</code> because each
+          element could be taken at most once; here the call passes <code>i</code>. Change it
+          back and you have Combination Sum II's shape, minus its duplicate handling.
         </p>
         <p>
-          <strong>Completion</strong> moved from "always" to "when the total hits the target".
-          Most frames are not answers now — only the two that record are.
+          <strong>Completion</strong> moved from "always" to "when the remaining target hits
+          0". That is why <code>target</code> travels down the stack as a parameter, shrinking
+          by each choice: every frame owns its own, exactly as every Subsets frame owned its own
+          <code>i</code>.
         </p>
         <p>
-          <strong>Dead ends</strong> are new. Once <code>total</code> would pass the target no
-          extension can bring it back. The loop form refuses to enter such a branch; the
-          include/skip form enters it and returns at once. Without either, the search would
-          add the smallest candidate forever.
+          <strong>Dead ends</strong> are new. Once <code>target</code> is below 0 no extension can
+          bring it back, so the frame returns at once. Without that line the loop would add the
+          smallest candidate forever — the check is not an optimisation, it is what makes the
+          recursion terminate.
+        </p>
+      `,
+    },
+    {
+      kicker: 'The interview upgrade',
+      figure: { approach: 'sorted', at: 'last', caption: 'Sorted, then break: seven nodes for the same two answers. No dead end is ever entered.' },
+      heading: 'Sort, then break early',
+      html: `
+        <p>
+          With a bigger target the pruned share grows fast, and every dead end is a call. The
+          second tab sorts the candidates first, and inside the loop asks one more question:
+          would this candidate overshoot? If so, <code>break</code> — every later candidate is
+          larger, so none of them can help either. The frame gives up on all of them at once
+          and never enters the dead end.
+        </p>
+        <p>
+          Same two answers, seven nodes instead of nine on this input, and the gap widens with
+          the target. Say it out loud after you have written the first form: "sorted, so once one
+          candidate overshoots I can stop the loop." That sentence is what interviewers mean by
+          "can you prune?".
         </p>
       `,
     },
     {
       kicker: 'The other picture',
-      figure: { approach: 'dfs', at: 'last', caption: 'Include or skip on the same input: fifty-five nodes, and only two leaves record anything.' },
+      figure: { approach: 'dfs', at: 'last', caption: 'Include or skip on the same input: one question per candidate, and every dead end is a leaf.' },
       heading: 'Include it and stay, or skip it and move on',
       html: `
         <p>
-          The second tab is the form most videos draw. Each frame looks at one candidate and
-          asks one question with two answers: include it — push it, add it to
-          <code>total</code>, recurse with the <em>same</em> index — or skip it, recursing
-          with <code>i + 1</code> and the same <code>cur</code>. Dead ends are frames that
-          return without recording: <code>total</code> past the target, or no candidates left.
+          The third tab is the form most videos draw. Each frame looks at one candidate and asks
+          one question with two answers: include it — push it, subtract it from the target,
+          recurse with the <em>same</em> index — or skip it, recursing with <code>i + 1</code> and
+          the same <code>curr</code>. Dead ends are frames that return without recording: target
+          below 0, or no candidates left.
         </p>
         <p>
-          It is correct, and it is a fine way to understand the problem. It is also
-          fifty-five nodes for two answers, because every dead end is a call. That contrast
-          is the reason to sort and break in the first tab, and the thing to say out loud when
-          an interviewer asks "can you prune?".
+          It is correct, and it is a fine way to understand the problem. It is also the biggest
+          tree of the three for the same answers, because every dead end is reached one decision
+          at a time. That contrast is the reason to write the loop, and then to sort.
         </p>
       `,
     },
   ],
 
   comparison: {
-    kicker: 'Two renderings',
-    heading: 'Same combinations, two shapes',
-    columns: ['Version', 'Tree shape', 'Where answers appear', 'Pruning', 'When you would write it'],
+    kicker: 'Three renderings',
+    heading: 'Same combinations, three shapes',
+    columns: ['Version', 'Tree on [2,3] → 6', 'Where answers appear', 'Pruning', 'When you would write it'],
     rows: [
-      ['Backtracking (sorted loop from start)', 'n-ary; never enters a dead end', 'Frames where total == target', 'Break once a candidate overshoots',
-        'Always, in an interview. It is the form that becomes Combination Sum II and Combinations by editing a line.'],
-      ['Include or skip', 'Binary; dead ends explored one at a time', 'Leaves where total == target', 'Return when total > target',
+      ['Backtracking (loop on i)', '9 nodes, 2 dead ends', 'Frames where target == 0', 'Return when target < 0',
+        'First, always. It is Subsets’ loop minus one character, and the form Combination Sum II and Combinations are edits to.'],
+      ['Sort, then break early', '7 nodes, no dead ends', 'Frames where target == 0', 'Break once a candidate overshoots',
+        'Right after the first, in the same interview: "sorted, so I can stop the loop early." The upgrade to mention, not the place to start.'],
+      ['Include or skip', 'Binary; dead ends one decision at a time', 'Leaves where target == 0', 'Return when target < 0',
         'To understand it, and when each candidate genuinely is a yes/no decision. The form most videos draw.'],
     ],
     footnote: `
-      Both are exponential in the worst case — the deepest path repeats the smallest candidate
+      All three are exponential in the worst case — the deepest path repeats the smallest candidate
       t/m times, so the tree can reach 2^(t/m) nodes. Say that bound out loud, then say that the
       sorted break removes every branch that could never succeed.
     `,
@@ -231,20 +341,20 @@ export default {
     heading: 'Four ways this runs and still returns nonsense',
     items: [
       {
-        title: 'Recursing with <code>i + 1</code> on the include branch',
-        body: 'That forbids reuse, so <code>[2,2,3]</code> is never found. The include branch must stay at <code>i</code>; only the skip branch moves on. One character separates this problem from Subsets.',
+        title: 'Passing <code>i + 1</code> to the recursive call',
+        body: 'That is Subsets, and it forbids reuse: <code>[2,2,2]</code> is never found. The call must pass <code>i</code>; only the loop’s next iteration moves on. One character separates the two problems.',
       },
       {
-        title: 'No stop for <code>total > target</code>',
-        body: 'The include branch keeps adding the smallest candidate forever — the recursion never returns. The dead-end check is not an optimisation here, it is what makes the function terminate.',
+        title: 'No exit for <code>target < 0</code>',
+        body: 'The loop keeps adding the smallest candidate forever — the recursion never returns. The dead-end check is not an optimisation here, it is what makes the function terminate.',
       },
       {
         title: 'Looping from <code>0</code> instead of <code>start</code>',
-        body: 'In the loop form this generates <code>[2,3]</code> and <code>[3,2]</code> as separate answers. The start index is the entire duplicate-prevention mechanism, exactly as in Subsets.',
+        body: 'This generates <code>[2,3]</code> and <code>[3,2]</code> as separate answers. The start index is the entire duplicate-prevention mechanism, exactly as in Subsets.',
       },
       {
         title: 'Breaking without sorting',
-        body: 'The early <code>break</code> assumes every later candidate is larger. On unsorted input it skips valid answers. Sort first, or use <code>continue</code> and give up the prune.',
+        body: 'The second tab’s early <code>break</code> assumes every later candidate is larger. On unsorted input it skips valid answers. Sort first, or keep the first tab’s plain return and give up the prune.',
       },
     ],
   },

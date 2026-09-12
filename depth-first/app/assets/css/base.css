@@ -21,6 +21,8 @@
   --active-soft: #FAE3C7;
   --done:        #146B51;
   --done-soft:   #D2EBE1;
+  --cut:         #A03530;
+  --cut-soft:    #F7E2E0;
   --grid:        rgba(39,72,138,.075);
   --code-bg:     #F6F9FC;
   --shadow:      0 1px 0 rgba(19,25,34,.05), 0 12px 30px -18px rgba(19,25,34,.32);
@@ -48,6 +50,10 @@
     --active-soft: #3B2A15;
     --done:        #4ECB9B;
     --done-soft:   #10322A;
+  --cut:         #E8807A;
+  --cut-soft:    #3D1F1D;
+    --cut:         #E8807A;
+    --cut-soft:    #3D1F1D;
     --grid:        rgba(135,171,243,.07);
     --code-bg:     #10171F;
     --shadow:      0 1px 0 rgba(0,0,0,.4), 0 14px 34px -20px rgba(0,0,0,.85);

@@ -111,25 +111,42 @@ function checkProblem(problem) {
 // the approach exists, the frame exists, the anchor exists in every language.
 function checkLesson(problem) {
   const lesson = problem.lesson;
-  const probFor = (ref) => (ref && ref.problem === 'warmup' ? lesson.warmup : problem);
-  const framesOf = (p, approachId) => {
-    const a = p.approaches.find((x) => x.id === approachId);
-    return a ? a.build(p.parseInput(p.defaultInput)).frames : null;
+  const probFor = (ref) => (ref && ref.problem === "warmup" ? lesson.warmup : problem);
+  const framesOf = (p, approachId, input, opts) => {
+    const a = p.approaches.find((x) => x.id === approachId) || (approachId ? null : p.approaches[0]);
+    return a ? a.build(p.parseInput(input ?? p.defaultInput), opts || {}).frames : null;
+  };
+  // { anchor, match }: the anchor must exist, and if there is a predicate some
+  // frame at that anchor must satisfy it — on the input the step is about.
+  const landing = (frames, at) => {
+    if (at === "last" || at === undefined) return true;
+    if (typeof at === "number") return at < frames.length;
+    if (typeof at !== "object") return true;
+    return frames.some((f) => (!at.anchor || f.anchor === at.anchor) && (!at.match || at.match(f)));
   };
 
-  const jumps = [lesson.finish, ...lesson.steps.flatMap((s) => (s.jumps || []).map((j) => ({ ...j, _step: s.title })))].filter(Boolean);
+  const jumps = [lesson.finish, ...lesson.steps.flatMap((s) => (s.jumps || []).map((j) => ({ ...j, _step: s.title, _input: j.input ?? s.instrument?.input })))].filter(Boolean);
   for (const j of jumps) {
-    const p = j.target === 'warmup' ? lesson.warmup : problem;
-    const frames = framesOf(p, j.approach);
-    if (!frames) { fail(`lesson: unknown approach ${j.approach} in "${j._step || 'finish'}"`); continue; }
-    if (typeof j.at === "object" && j.at.anchor && !frames.some((f) => f.anchor === j.at.anchor)) fail(`lesson: no frame with anchor ${j.at.anchor} in ${j.approach}`);
-    if (typeof j.at === 'number' && j.at >= frames.length) fail(`lesson: frame ${j.at} is past the end of ${j.approach} (${frames.length} frames)`);
+    const p = j.target === "warmup" ? lesson.warmup : problem;
+    const frames = framesOf(p, j.approach, j._input);
+    if (!frames) { fail(`lesson: unknown approach ${j.approach} in "${j._step || "finish"}"`); continue; }
+    if (!landing(frames, j.at)) fail(`lesson: jump "${j.label || j._step}" lands on no frame (${JSON.stringify(j.at, (k, v) => (typeof v === "function" ? "fn" : v))})`);
   }
   for (const s of lesson.steps) {
     for (const g of [s.figure, s.grow, s.instrument].filter(Boolean)) {
       const p = probFor(g);
-      if (g.approach && !p.approaches.some((x) => x.id === g.approach)) fail(`lesson: unknown approach ${g.approach} in "${s.title}"`);
-      if (typeof g.at === "object" && g.at.anchor && !framesOf(p, g.approach).some((f) => f.anchor === g.at.anchor)) fail(`lesson: figure anchor ${g.at.anchor} missing in "${s.title}"`);
+      if (g.approach && !p.approaches.some((x) => x.id === g.approach)) { fail(`lesson: unknown approach ${g.approach} in "${s.title}"`); continue; }
+      const frames = framesOf(p, g.approach, g.input);
+      if (!landing(frames, g.at)) fail(`lesson: figure in "${s.title}" lands on no frame`);
+      if (s.ledger && !frames.some((f) => f.test)) fail(`lesson: "${s.title}" has a ledger but no frame carries a test`);
+    }
+    if (s.toggle) {
+      const p = probFor(s.toggle);
+      for (const o of s.toggle.options) {
+        const frames = framesOf(p, s.toggle.approach, s.toggle.input, o.opts);
+        if (!frames) fail(`lesson: toggle "${o.label}" in "${s.title}" has no approach ${s.toggle.approach}`);
+        else if (!frames.some((f) => f.test)) fail(`lesson: toggle "${o.label}" in "${s.title}" produced no test frames`);
+      }
     }
     if (s.parts) {
       const p = probFor(s);

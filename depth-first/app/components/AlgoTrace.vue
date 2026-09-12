@@ -90,8 +90,13 @@ async function pace(f, speed) {
   await sleep(950 / speed);
 }
 
+// A lesson embedding this instrument follows its step (to fill a ledger, say).
+const emit = defineEmits(['step']);
+
 const { index, playing, speed, frame, frames, last, toggle, step, restart, scrub } =
   useTrace(framesRef, { pace });
+
+watch(index, (v) => emit('step', v), { immediate: true });
 
 // Stepping by hand should read the step you landed on. During playback the
 // pacer is already doing the talking, so don't double up.
@@ -261,8 +266,9 @@ function applyStop() {
 function stop2(stop) {
   if (stop.at === 'last') { scrub(last.value); return; }
   if (typeof stop.at === 'number') { scrub(stop.at); return; }
-  if (stop.at && stop.at.anchor) {
-    const i = frames.value.findIndex((f) => f.anchor === stop.at.anchor);
+  if (stop.at && typeof stop.at === 'object' && (stop.at.anchor || stop.at.match)) {
+    const { anchor, match } = stop.at;
+    const i = frames.value.findIndex((f) => (!anchor || f.anchor === anchor) && (!match || match(f)));
     scrub(i >= 0 ? i : 0);
     return;
   }
@@ -296,6 +302,7 @@ function jumpTo(target) {
   if (!target) return;
   coarse.value = false;
   if (target.approach && target.approach !== approachId.value) approachId.value = target.approach;
+  if (target.input != null && target.input !== treeText.value) treeText.value = target.input;
   started.value = true;
   nextTick(() => {
     cancelSpeech();
@@ -351,7 +358,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="instrument" :class="{ compact }" aria-label="Algorithm trace">
-    <div v-if="!compact || problem.approaches.length > 1" class="rig-head">
+    <div v-if="!compact" class="rig-head">
       <div class="tabs" :class="{ 'tour-focus': focusZone === 'tabs' }">
         <button
           v-for="(a, i) in problem.approaches"
@@ -391,7 +398,7 @@ onBeforeUnmount(() => {
         :aria-pressed="voiceOn ? 'true' : 'false'"
         @click="toggleNarration"
       >{{ voiceOn ? '🔊' : '🔇' }}</button>
-      <span v-if="keyable" class="grain" role="group" aria-label="Trace detail">
+      <span v-if="keyable && !compact" class="grain" role="group" aria-label="Trace detail">
         <button class="lang" type="button" :aria-pressed="coarse ? 'true' : 'false'" @click="setGrain(true)">Key moments</button>
         <button class="lang" type="button" :aria-pressed="coarse ? 'false' : 'true'" @click="setGrain(false)">Every step</button>
       </span>

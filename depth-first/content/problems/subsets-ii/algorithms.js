@@ -37,7 +37,7 @@ const loopCode = {
             curr.append(nums[i])
             self.backtrack(i + 1, nums, curr, res)
             curr.pop()`,
-    anchors: { start: 5, call: 8, record: 10, loop: 14, skip: 15, choose: 17, recurse: 18, unchoose: 19, done: 6 },
+    anchors: { start: 5, call: 8, record: 10, loop: 14, skip: 15, next: 16, choose: 17, recurse: 18, unchoose: 19, done: 6 },
   },
   javascript: {
     source: `var subsetsWithDup = function(nums) {
@@ -61,7 +61,7 @@ const loopCode = {
     backtrack(0, []);
     return res;
 };`,
-    anchors: { start: 19, call: 5, record: 7, loop: 11, skip: 12, choose: 13, recurse: 14, unchoose: 15, done: 20 },
+    anchors: { start: 19, call: 5, record: 7, loop: 11, skip: 12, next: 12, choose: 13, recurse: 14, unchoose: 15, done: 20 },
   },
   java: {
     source: `class Solution {
@@ -87,7 +87,7 @@ const loopCode = {
         }
     }
 }`,
-    anchors: { start: 5, call: 9, record: 12, loop: 16, skip: 17, choose: 18, recurse: 19, unchoose: 20, done: 6 },
+    anchors: { start: 5, call: 9, record: 12, loop: 16, skip: 17, next: 17, choose: 18, recurse: 19, unchoose: 20, done: 6 },
   },
   cpp: {
     source: `class Solution {
@@ -115,7 +115,7 @@ public:
         }
     }
 };`,
-    anchors: { start: 7, call: 11, record: 14, loop: 18, skip: 19, choose: 20, recurse: 21, unchoose: 22, done: 8 },
+    anchors: { start: 7, call: 11, record: 14, loop: 18, skip: 19, next: 19, choose: 20, recurse: 21, unchoose: 22, done: 8 },
   },
 };
 
@@ -268,9 +268,14 @@ function makeSnap(frames, stack, returns, res, nextIdRef, extraVars) {
   };
 }
 
-/* 1. Sort, then skip equal siblings. */
+/* 1. Sort, then skip equal siblings. Every evaluation of the skip test is a
+   frame of its own, carrying `test` — index, i, i > index, equal?, verdict —
+   so a ledger can show that two tests on the same values can disagree.
+   `opts.dup` is what to do at a duplicate: continue (correct) or break (the
+   lesson runs both to show what break loses). */
 
-function loopFrames(nums) {
+function loopFrames(nums, opts = {}) {
+  const breakOnDup = opts.dup === 'break';
   const frames = [];
   const nodes = [];
   const stack = [];
@@ -279,65 +284,101 @@ function loopFrames(nums) {
   const curr = [];
   const nextId = { value: 0 };
   let flashAdd = false;
+  let refused = 0;
   const snap = makeSnap(frames, stack, returns, res, nextId, () => [{ name: 'curr', value: fmt(curr) }]);
   const S = (anchor, caption, extra) => { snap(anchor, caption, flashAdd, extra); flashAdd = false; };
 
   function go(index, parentId, depth) {
     const id = nextId.value++;
     const label = fmt(curr);
-    nodes.push({ id, parentId, key: `${depth}:${curr.join(',')}`, label, depth });
+    nodes.push({ id, parentId, key: `${depth}:${curr.join(',')}`, label, depth, sub: `index ${index}` });
     const fr = { id, label, index, i: '—' };
     stack.push(fr);
 
     S('call', depth === 0
-      ? `Start. The input is sorted first — ${words(nums)} — so equal values sit side by side.`
-      : `A new frame with index = ${index}. It may only pick from position ${index} onward.`,
+      ? `Start. The input is sorted first — ${words(nums)} — so equal values sit next to each other, which is the only reason a neighbour comparison can detect a duplicate at all.`
+      : `A new frame with index = ${index}. Going deeper set index to match the i that was just taken.`,
     { active: id, flash: 'call', key: depth === 0 });
 
     const mark = res.length;
     res.push([...curr]);
     flashAdd = true;
     const rec = (list) => (depth === 0
-      ? 'Save the empty subset first — every path is an answer, this one included.'
-      : `Save ${list}. Every path is a subset, so record on arrival.`);
+      ? 'Record the empty subset before choosing anything — every path is an answer, this one included.'
+      : `Record ${list}.`);
     S('record', rec(fmt(curr)), { active: id, flash: 'best', key: true, spoken: rec(subset(curr)) });
+
+    if (index >= nums.length) {
+      S('loop', `index = ${index} gives an empty range: nothing left to choose, so this frame returns at once.`, { active: id, flash: 'return' });
+    }
 
     for (let i = index; i < nums.length; i++) {
       fr.i = i;
-      if (i > index && nums[i] === nums[i - 1]) {
-        S('skip', `nums[${i}] is another ${nums[i]}. A sibling branch on this level already started with ${nums[i]}, so starting again would rebuild the same subsets. Skip it.`,
+      const gt = i > index;
+      const eq = i > 0 ? nums[i] === nums[i - 1] : null;
+      const skip = gt && eq === true;
+      const test = { label, index, i, gt, eq, verdict: skip ? 'skip' : 'take' };
+      let caption;
+      if (!gt && i === 0) {
+        caption = 'First test. i = 0 and index = 0, so i > index is false — the loop has not moved yet, and the value this frame starts on was handed to it. No skip; the neighbour comparison is never even reached.';
+      } else if (!gt && eq) {
+        caption = `nums[${i}] == nums[${i - 1}] — both are ${nums[i]}. But i = ${i} and index = ${index}, so i > index is FALSE. No skip. Going deeper raised index to match i, which is exactly what lets a duplicate follow its twin.`;
+      } else if (!gt) {
+        caption = `i = index = ${i}: i > index is false, so the neighbour test is never reached — the first value a frame sees is never skipped. Take ${nums[i]}.`;
+      } else if (!eq) {
+        caption = `i = ${i}, index = ${index}: i > index is true, but nums[${i}] = ${nums[i]} differs from nums[${i - 1}] = ${nums[i - 1]}. Different value, so no skip.`;
+      } else {
+        caption = `Same neighbour test, same two values — but now i = ${i} while index = ${index}, so i > index is TRUE. Skip. Taking this ${nums[i]} would rebuild ${fmt([...curr, nums[i]])} and everything under it, which the sibling branch already built.`;
+      }
+      S('skip', caption, { active: id, key: eq === true, test, flash: skip ? 'return' : null });
+
+      if (skip) {
+        refused += 1;
+        nodes.push({ id: nextId.value++, parentId: id, key: `skip:${id}:${i}`, label: 'skip', depth: depth + 1, sub: `i=${i}, dup`, phantom: true });
+        const rest = nums.length - i - 1;
+        if (breakOnDup) {
+          S('next', rest > 0
+            ? `break ends the loop here. ${words(nums.slice(i + 1))} ${rest === 1 ? 'is' : 'are'} never tried at this level — position ${i + 1} onward is simply not reached.`
+            : 'break ends the loop here. Nothing followed the duplicate, so nothing is lost at this level.',
           { active: id, flash: 'return', key: true });
+          break;
+        }
+        S('next', rest > 0
+          ? `continue moves on to the next i. Position ${i + 1}, which is ${nums[i + 1]}, still gets its turn.`
+          : 'continue moves on — and there is no next i, so this frame returns.',
+        { active: id, flash: 'return' });
         continue;
       }
-      S('loop', i === index
-        ? `Look at the choices from position ${index} on. First: ${nums[i]}.`
-        : `Next choice: ${nums[i]}.`,
-      { active: id });
 
       curr.push(nums[i]);
-      S('choose', `Pick ${nums[i]}. curr is now ${fmt(curr)}.`, { active: id, flash: 'call', spoken: `Pick ${nums[i]}. curr is now ${words(curr)}.` });
+      S('choose', `Take nums[${i}] = ${nums[i]} and recurse with index = ${i + 1}. curr is ${fmt(curr)}.`,
+        { active: id, flash: 'call', spoken: `Take nums at ${i}, which is ${nums[i]}, and recurse with index ${i + 1}. curr is ${words(curr)}.` });
 
       go(i + 1, id, depth + 1);
 
-      S('recurse', `Back from that call, still on i = ${i}.`, { active: id });
-
       curr.pop();
-      const undo = (list) => `Pop ${nums[i]}. curr is back to ${list}.`;
+      const undo = (list) => `Return and un-choose: pop ${nums[i]}. Back in ${list} with i still ${i}.`;
       S('unchoose', undo(fmt(curr)), { active: id, flash: 'return', key: true, spoken: undo(words(curr)) });
     }
 
     fr.i = 'done';
     returns[id] = res.length - mark;
-    S('loop', `No choices left here. This frame added ${plural(res.length - mark, 'subset')}.`, { active: id, flash: 'return' });
+    if (index < nums.length) {
+      S('loop', `${fmt(curr)} has no positions left and returns. It added ${plural(res.length - mark, 'subset')}.`,
+        { active: id, flash: 'return', spoken: `${subset(curr)} has no positions left and returns. It added ${plural(res.length - mark, 'subset')}.` });
+    }
     stack.pop();
   }
 
   go(0, null, 0);
 
+  const real = nodes.filter((n) => !n.phantom).length;
   frames.push({
     ...blank,
     anchor: 'done',
-    caption: `Done: ${plural(res.length, 'subset')}, each built exactly once. The tree has ${nodes.length} nodes and no two of them are the same subset.`,
+    caption: breakOnDup
+      ? `Done: ${plural(res.length, 'subset')}. break refused ${plural(refused, 'branch')} — and ended ${refused === 1 ? 'a loop' : 'loops'} early, so some subsets were never built at all.`
+      : `Done: ${plural(res.length, 'subset')}, no duplicates, and no set or de-duplication pass anywhere. ${plural(refused, 'branch')} refused before existing — the duplicates were never generated, which is always cheaper than generating and then removing them. ${real} real nodes, one per subset.`,
     callStack: [],
     returns: { ...returns },
     revealed: nodes.length,
@@ -447,7 +488,7 @@ const loopComplexity = {
   time: {
     bound: 'O(n · 2ⁿ)',
     count: 'sum',
-    iterationAnchors: ['choose', 'skip'],
+    iterationAnchors: ['skip'],
     story: [
       (m) => `Every node is an answer, so the tree has exactly as many nodes as there are subsets: ${m.calls} here. With no repeated values that would be 2ⁿ = ${2 ** m.n}; the skips remove the rest.`,
       (m) => `Each subset is copied when it is recorded, at most n = ${m.n} numbers: ${m.answers} × ${m.n} ≤ ${m.answers * m.n} element writes. That is the <code>n · 2ⁿ</code> in the worst case.`,
@@ -458,12 +499,12 @@ const loopComplexity = {
       {
         anchor: 'loop',
         runs: '<code>n − index</code> times in the frame that owns it — everything to the right of the last pick.',
-        measured: (m) => `${m.iterations} iterations in total: ${m.by.choose || 0} started a branch, ${m.by.skip || 0} were skipped as duplicates of a sibling.`,
+        measured: (m) => `${m.iterations} iterations in total: ${m.by.choose || 0} started a branch, ${m.by.next || 0} were skipped as duplicates of a sibling.`,
       },
       {
         anchor: 'skip',
         runs: 'Once per iteration — one comparison against the previous value on the same level.',
-        measured: (m) => `${m.by.skip || 0} branch${(m.by.skip || 0) === 1 ? '' : 'es'} refused before existing.`,
+        measured: (m) => `${m.by.next || 0} branch${(m.by.next || 0) === 1 ? '' : 'es'} refused before existing.`,
       },
     ],
     note: 'Quote O(n · 2ⁿ), then say the skip removes duplicate branches without changing the bound. Interviewers ask for both halves.',
@@ -540,7 +581,7 @@ export const approaches = [
       'Start with <code>backtrack(0, [])</code> and return the result.',
     ],
     watchFor:
-      'Watch the skip frames. The comparison is i > index, not i > 0: the second 2 is skipped as a sibling of the first, but chosen happily as its child, which is how [2,2] still gets built.',
+      'Watch every evaluation of the skip test, not just the skips. The same two values are compared twice and the verdicts differ, because i > index is about the frame, not the values: the second 2 is skipped as a sibling of the first, but taken happily as its child, which is how [2,2] still gets built.',
     idea:
       'Two questions, same as Subsets. Q1: every path is a complete answer, so record on arrival. Q2: everything to the right of index — minus one thing: a value equal to the one an earlier sibling on this level already started with. '
       + 'Sorting is what makes that a single comparison, nums[i] == nums[i - 1]. The i > index guard is what keeps the same value allowed as a child, so [2,2] still appears.',

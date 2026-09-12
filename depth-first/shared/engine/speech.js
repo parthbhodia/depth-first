@@ -46,6 +46,13 @@ export function toSpeech(text) {
   // Operators and dashes.
   s = s.replace(/\s*—\s*/g, ', ');
   s = s.replace(/\s*→\s*/g, ' becomes ');
+  // Comparisons first, so a single = never eats half of ==.
+  s = s.replace(/\s*==\s*/g, ' equals ');
+  s = s.replace(/\s*!=\s*/g, ' is not equal to ');
+  s = s.replace(/\s*>=\s*/g, ' is at least ');
+  s = s.replace(/\s*<=\s*/g, ' is at most ');
+  s = s.replace(/(\S)\s*>\s*(\S)/g, '$1 is greater than $2');
+  s = s.replace(/(\S)\s*<\s*(\S)/g, '$1 is less than $2');
   s = s.replace(/\s*=\s*/g, ' equals ');
   s = s.replace(/(\d)\s*\+\s*/g, '$1 plus ');
   s = s.replace(/\s*\+\s*(\d)/g, ' plus $1');

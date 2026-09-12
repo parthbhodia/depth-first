@@ -31,6 +31,10 @@ const box = computed(() => {
 });
 
 const nodeClass = (n) => ({
+  // A branch that was refused before it existed (Subsets II skip), or a call
+  // that turned out to be a dead end (Combination Sum overshoot).
+  phantom: n.phantom,
+  cut: n.cut && returns.value[n.id] !== undefined,
   act: props.frame && props.frame.active === n.id,
   open: path.value.includes(n.id) && !(props.frame && props.frame.active === n.id),
   done: returns.value[n.id] !== undefined && !(props.frame && props.frame.active === n.id),
@@ -75,7 +79,11 @@ const nodeClass = (n) => ({
           :height="n.h"
           rx="4"
         />
-        <text class="cnodet" :x="n.x" :y="n.y">{{ n.label }}</text>
+        <template v-if="n.sub">
+          <text class="cnodet" :x="n.x" :y="n.y - 6">{{ n.label }}</text>
+          <text class="cnodesub" :x="n.x" :y="n.y + 8">{{ n.sub }}</text>
+        </template>
+        <text v-else class="cnodet" :x="n.x" :y="n.y">{{ n.label }}</text>
         <text
           v-if="n.dup && !plain"
           class="cdup"

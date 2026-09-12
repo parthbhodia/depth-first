@@ -11,8 +11,9 @@ import { layoutCallTree, CALL_LAYOUT } from '#engine/calltree.js';
  * algorithm and freezes it at a meaningful frame — so a figure can never
  * disagree with the trace above it.
  *
- * `at` is 'last', a frame index, or { anchor } to find the first frame at that
- * step. 'last' and anchors survive edits to the frame list; raw indices do not.
+ * `at` is 'last', a frame index, or { anchor, match } to find the first frame at
+ * that step (and, with `match`, the first such frame the predicate accepts).
+ * 'last' and anchors survive edits to the frame list; raw indices do not.
  */
 const props = defineProps({
   problem: { type: Object, required: true },
@@ -32,8 +33,9 @@ const frame = computed(() => {
   if (!f.length) return null;
   if (props.at === 'last') return f[f.length - 1];
   if (typeof props.at === 'number') return f[Math.min(props.at, f.length - 1)];
-  if (props.at && props.at.anchor) {
-    return f.find((x) => x.anchor === props.at.anchor) || f[f.length - 1];
+  if (props.at && typeof props.at === 'object' && (props.at.anchor || props.at.match)) {
+    const { anchor, match } = props.at;
+    return f.find((x) => (!anchor || x.anchor === anchor) && (!match || match(x))) || f[f.length - 1];
   }
   return f[f.length - 1];
 });

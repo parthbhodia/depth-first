@@ -49,9 +49,10 @@ export default {
     if (canonical(got) !== canonical(powerset(nums))) return 'subsets do not match the deduplicated powerset';
     return null;
   },
-  checkInputs: ['1,2,2', '4,4,4,1', '0', '1,2,3', '2,2,2,2', '1,1,2,2'],
+  checkInputs: ['1,2,2', '2,2', '1,2,2,3', '4,4,4,1', '0', '1,2,3', '2,2,2,2', '1,1,2,2'],
 
-  callLayout: { nodeW: 84, xGap: 96 },
+  /** Two-line nodes: the subset, and the index the frame owns. */
+  callLayout: { nodeW: 84, xGap: 96, nodeH: 36 },
 
   video: {
     // Same channel as the Subsets and Combination Sum pages; title and author from a YouTube search.
@@ -94,9 +95,10 @@ export default {
 
   defaultInput: '1,2,2',
   presets: [
+    { name: '[2,2] (smallest proof)', arr: '2,2' },
     { name: '[1,2,2]', arr: '1,2,2' },
+    { name: '[1,2,2,3]', arr: '1,2,2,3' },
     { name: '[1,1,2,2]', arr: '1,1,2,2' },
-    { name: '[4,4,4,1]', arr: '4,4,4,1' },
     { name: '[1,2,3] (no dups)', arr: '1,2,3' },
   ],
 
@@ -109,13 +111,99 @@ export default {
       text: 'Subsets, plus one line: if i > index and nums[i] == nums[i - 1], skip. Read the guard carefully — i > index, not i > 0. That is the difference between skipping a sibling and skipping a child.' },
     { focus: 'stage', approach: 'loop', play: true,
       text: 'Play it. Six subsets, six nodes. There is no node for the [2] that the second 2 would have started, because that branch is refused before it exists.' },
-    { focus: 'stack', approach: 'loop', at: { anchor: 'skip' },
+    { focus: 'stack', approach: 'loop', at: { anchor: 'skip', match: (f) => f.test && f.test.verdict === 'skip' },
       text: 'The skip. This frame is on i = 2, the second 2. Its sibling branch on i = 1 already built everything that starts with a 2, so this one is not started.' },
     { focus: 'stage', approach: 'set', play: true,
       text: 'Now build everything and dedupe. Eight nodes for six subsets, and the ×2 marks are the repeats. Each of them was a whole branch of work before the set said no.' },
     { focus: null, approach: 'loop', at: 'last',
       text: 'Write the first tab. It is Subsets with one comparison, and the same comparison is the whole of Combination Sum II and Permutations II.' },
   ],
+
+  /**
+   * Three tiny inputs, each one a proof. [2,2] is the smallest input where the
+   * skip test runs twice on the same values and disagrees; [1,2,2] is the
+   * LeetCode example with both verdicts in one tree; [1,2,2,3] is where break
+   * instead of continue loses answers. Every picture is a real run.
+   */
+  lesson: {
+    kicker: 'Subsets II, from Subsets',
+    heading: 'Two tests. Same values. Opposite answers.',
+    invite: 'Three tiny inputs, each one a proof of the skip line. About four minutes.',
+    finish: { approach: 'loop', play: true, label: 'Play the trace' },
+    steps: [
+      {
+        title: 'The smallest proof of i > index',
+        html: `
+          <p><code>nums = [2,2]</code> — the smallest input where <code>nums[i] == nums[i−1]</code>
+          gets evaluated twice and comes out meaning different things. Watch the ledger fill:
+          rows 2 and 3 have identical value comparisons and differ only in <code>index</code>.</p>
+          <p>Step through it with the arrows, or jump straight to the two verdicts.</p>`,
+        instrument: { approach: 'loop', input: '2,2' },
+        ledger: { title: 'Every time the skip test runs' },
+        jumps: [
+          { target: 'embedded', approach: 'loop', at: { anchor: 'skip', match: (f) => f.test?.eq === true && f.test.verdict === 'take' }, label: 'Second test: equal, but take', key: true },
+          { target: 'embedded', approach: 'loop', at: { anchor: 'skip', match: (f) => f.test?.verdict === 'skip' }, label: 'Third test: equal, and skip' },
+          { target: 'embedded', approach: 'loop', play: true, label: 'Play it' },
+        ],
+      },
+      {
+        title: 'Nothing about the values decided this',
+        html: `
+          <p>Three subsets from a two-element input: the empty one, <code>[2]</code>, and
+          <code>[2,2]</code>. Without the skip you would get four, with <code>[2]</code>
+          appearing twice.</p>
+          <p>The ledger is the whole argument. Rows 2 and 3 compare the same two values and
+          disagree — because <code>index</code> differs. Going deeper raises <code>index</code>
+          to match <code>i</code>, which is exactly what licenses a duplicate to follow its
+          twin. A sibling on the same level keeps the old <code>index</code>, and that is the
+          branch that would be redundant.</p>`,
+        questions: [
+          { q: 'When is a repeated value taken?',
+            a: 'When it is the first value its frame sees: <code>i == index</code>. That is a duplicate <em>below</em> its twin — <code>[2,2]</code> — and it was never the thing being prevented.' },
+          { q: 'When is it skipped?',
+            a: 'When <code>i > index</code>: a sibling branch on this level already started with that value, so starting again would rebuild everything under it. The branch is not wrong, it is redundant.' },
+        ],
+      },
+      {
+        title: 'One branch per distinct value, per level',
+        html: `
+          <p><code>nums = [1,2,2]</code>, already sorted. Watch the two frames where
+          <code>nums[i] == nums[i−1]</code> is true and the verdicts come out opposite — that is
+          <code>i > index</code> doing its whole job.</p>
+          <p>Six subsets, no duplicates, and no set anywhere. The refused branches are drawn
+          dashed: they were never generated, which is always cheaper than generating and then
+          removing them.</p>`,
+        instrument: { approach: 'loop', input: '1,2,2' },
+        jumps: [
+          { target: 'embedded', approach: 'loop', at: { anchor: 'skip', match: (f) => f.test?.eq === true && f.test.verdict === 'take' }, label: 'The first verdict: take', key: true },
+          { target: 'embedded', approach: 'loop', at: { anchor: 'skip', match: (f) => f.test?.verdict === 'skip' }, label: 'The opposite verdict: skip' },
+          { target: 'embedded', approach: 'loop', at: { anchor: 'skip', match: (f) => f.test?.verdict === 'skip' && f.test.label === '[ ]' }, label: 'The root\'s own skip' },
+          { target: 'embedded', approach: 'loop', play: true, label: 'Play it' },
+        ],
+      },
+      {
+        title: 'Why continue, and not break?',
+        html: `
+          <p>Different input: <code>nums = [1,2,2,3]</code>, and only the root frame's loop,
+          where <code>index = 0</code>. Toggle the two and watch what the loop does after the
+          duplicate. Both runs are the real builder with one line changed.</p>`,
+        toggle: {
+          approach: 'loop',
+          input: '1,2,2,3',
+          collect: 'subsets',
+          label: 'What to do at a duplicate',
+          cellsTitle: 'Root loop over i = 0 … 3',
+          outsTitle: 'Every subset the algorithm produces',
+          options: [
+            { id: 'continue', label: 'continue', opts: {}, skipNote: 'continue — next i',
+              verdict: (m) => `All ${m.count} subsets. <code>continue</code> skips one value and carries on, so the 3 sitting after the duplicate still gets its turn.` },
+            { id: 'break', label: 'break', opts: { dup: 'break' }, skipNote: 'break — loop ends',
+              verdict: (m) => `${m.count} subsets — ${m.lost.join(' and ')} are gone. <code>break</code> ends the loop at the duplicate, so the 3 after it is never tried at any level where a duplicate came first. The array is sorted by <em>value</em>, not by duplicate-ness: a duplicate being followed by a duplicate is not guaranteed. <code>break</code> is only legal when the condition, once true, stays true for the rest of the loop — which is why Combination Sum's sorted form may break on "this candidate overshoots" (everything after is also too big), but nothing may break on this test.` },
+          ],
+        },
+      },
+    ],
+  },
 
   approaches,
   approachById,

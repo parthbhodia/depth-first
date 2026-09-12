@@ -1,15 +1,17 @@
 /**
- * algorithms.js — LeetCode 39, instrumented two ways.
+ * algorithms.js — LeetCode 39, instrumented three ways.
  *
- * Subsets with three changes, each visible in the trace: an answer is only
- * complete when the running total hits the target (Q1 is a real check now),
- * a candidate may be reused (recurse with the same index), and a path can be
- * a dead end (total past the target), which is the first real pruning.
+ * Subsets with three changes, each visible in the trace: the recursive call
+ * passes i (not i + 1) so a candidate can be reused, an answer is complete
+ * only when the remaining target hits 0 (Q1 is a real check now), and a path
+ * can be wrong (target below 0), which is the first pruning.
  *
- *   loop  — loop from `start` with reuse, sorted so it can stop early. The
- *           interview form and the first tab: ten nodes, no dead ends.
- *   dfs   — include or skip, the form most videos draw. Faithful, and on the
- *           same input a 55-node tree with 27 dead ends — which is the point.
+ *   loop    — Subsets’ loop minus one character, on the remaining target.
+ *             Dead ends are real calls and stay on the tree. First tab.
+ *   sorted  — the interview upgrade: sort, and break the moment a candidate
+ *             would overshoot. Never enters a dead end.
+ *   dfs     — include or skip, the picture most videos draw. Faithful, and
+ *             the biggest tree of the three, which is the point.
  */
 
 /* ------------------------------------------------------------------ */
@@ -128,6 +130,120 @@ public:
 };
 
 const loopCode = {
+  python: {
+    source: `class Solution:
+    def combinationSum(self, candidates: list[int], target: int) -> list[list[int]]:
+        res = []
+        self.backtrack(0, candidates, target, [], res)
+        return res
+
+    def backtrack(self, start, nums, target, curr, res):
+        # Q1 — complete answer? target is exactly 0: record it.
+        if target == 0:
+            res.append(list(curr))
+            return
+        # Dead end: target went negative. Subsets could never be wrong; this can.
+        if target < 0:
+            return
+
+        # Q2 — what choices do I have? Everything from start on — and start is i,
+        # not i + 1, so the same candidate may be taken again.
+        for i in range(start, len(nums)):
+            curr.append(nums[i])
+            self.backtrack(i, nums, target - nums[i], curr, res)
+            curr.pop()`,
+    anchors: { start: 4, call: 7, check: 9, record: 10, exit: 11, prune: 13, cut: 14, loop: 18, choose: 19, recurse: 20, unchoose: 21, done: 5 },
+  },
+  javascript: {
+    source: `var combinationSum = function(candidates, target) {
+    const res = [];
+
+    const backtrack = (start, target, curr) => {
+        // Q1 — complete answer? target is exactly 0: record it.
+        if (target === 0) {
+            res.push([...curr]);
+            return;
+        }
+        // Dead end: target went negative. Subsets could never be wrong; this can.
+        if (target < 0) return;
+
+        // Q2 — what choices do I have? Everything from start on — and start is i,
+        // not i + 1, so the same candidate may be taken again.
+        for (let i = start; i < candidates.length; i++) {
+            curr.push(candidates[i]);
+            backtrack(i, target - candidates[i], curr);
+            curr.pop();
+        }
+    };
+
+    backtrack(0, target, []);
+    return res;
+};`,
+    anchors: { start: 22, call: 4, check: 6, record: 7, exit: 8, prune: 11, cut: 11, loop: 15, choose: 16, recurse: 17, unchoose: 18, done: 23 },
+  },
+  java: {
+    source: `class Solution {
+    public List<List<Integer>> combinationSum(int[] candidates, int target) {
+        List<List<Integer>> res = new ArrayList<>();
+        backtrack(0, candidates, target, new ArrayList<>(), res);
+        return res;
+    }
+
+    private void backtrack(int start, int[] nums, int target,
+                           List<Integer> curr, List<List<Integer>> res) {
+        // Q1 — complete answer? target is exactly 0: record it.
+        if (target == 0) {
+            res.add(new ArrayList<>(curr));
+            return;
+        }
+        // Dead end: target went negative. Subsets could never be wrong; this can.
+        if (target < 0) return;
+
+        // Q2 — what choices do I have? Everything from start on — and start is i,
+        // not i + 1, so the same candidate may be taken again.
+        for (int i = start; i < nums.length; i++) {
+            curr.add(nums[i]);
+            backtrack(i, nums, target - nums[i], curr, res);
+            curr.remove(curr.size() - 1);
+        }
+    }
+}`,
+    anchors: { start: 4, call: 8, check: 11, record: 12, exit: 13, prune: 16, cut: 16, loop: 20, choose: 21, recurse: 22, unchoose: 23, done: 5 },
+  },
+  cpp: {
+    source: `class Solution {
+public:
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        vector<vector<int>> res;
+        vector<int> curr;
+        backtrack(0, candidates, target, curr, res);
+        return res;
+    }
+
+    void backtrack(int start, vector<int>& nums, int target,
+                   vector<int>& curr, vector<vector<int>>& res) {
+        // Q1 — complete answer? target is exactly 0: record it.
+        if (target == 0) {
+            res.push_back(curr);
+            return;
+        }
+        // Dead end: target went negative. Subsets could never be wrong; this can.
+        if (target < 0) return;
+
+        // Q2 — what choices do I have? Everything from start on — and start is i,
+        // not i + 1, so the same candidate may be taken again.
+        for (int i = start; i < nums.size(); i++) {
+            curr.push_back(nums[i]);
+            backtrack(i, nums, target - nums[i], curr, res);
+            curr.pop_back();
+        }
+    }
+};`,
+    anchors: { start: 6, call: 10, check: 13, record: 14, exit: 15, prune: 18, cut: 18, loop: 22, choose: 23, recurse: 24, unchoose: 25, done: 7 },
+  },
+};
+
+const sortedCode = {
   python: {
     source: `class Solution:
     def combinationSum(self, candidates: list[int], target: int) -> list[list[int]]:
@@ -254,7 +370,7 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const words = (a) => (a.length ? a.join(', ').replace(/, ([^,]*)$/, ' and $1') : 'nothing');
 const combo = (a) => (a.length ? `the combination ${words(a)}` : 'the empty combination');
 
-/* 1. Include or skip. Two choices per frame; the tree is binary, pruned. */
+/* 3. Include or skip. Two choices per frame; the tree is binary, pruned. */
 
 function dfsFrames({ candidates: cand, target }) {
   const frames = [];
@@ -378,9 +494,161 @@ function dfsFrames({ candidates: cand, target }) {
   return { frames, answer: res.length, nodes, combos: res };
 }
 
-/* 2. Loop from start, reuse allowed, sorted so the loop can stop early. */
+/* 1. Subsets' loop, minus one character: recurse on i, not i + 1. The
+   remaining target travels down the stack; Q1 is a real check (it hit 0)
+   and a frame can be wrong (it went negative). Dead ends are real calls
+   and stay on the tree, dashed, so the cost of not sorting is visible. */
+
+const neg = (n) => String(n).replace('-', '−');
 
 function loopFrames({ candidates: cand, target }) {
+  const frames = [];
+  const nodes = [];
+  const stack = [];
+  const returns = {};
+  const res = [];
+  const cur = [];
+  let nextId = 0;
+  let flashAdd = false;
+  let pruned = 0;
+  let pushes = 0;
+
+  const snap = (anchor, caption, extra = {}) => {
+    frames.push({
+      ...blank,
+      anchor,
+      caption,
+      callStack: stack.map((f) => ({
+        label: f.label,
+        nodeId: f.id,
+        locals: [
+          { name: 'start', value: f.start },
+          { name: 'target', value: neg(f.remaining) },
+          { name: 'i', value: f.i },
+        ],
+      })),
+      path: stack.map((f) => f.id),
+      returns: { ...returns },
+      revealed: nextId,
+      collected: {
+        label: 'res',
+        items: res.map(fmt),
+        justAdded: flashAdd ? res.length - 1 : null,
+      },
+      vars: [
+        { name: 'curr', value: fmt(cur) },
+        { name: 'target', value: neg(stack.length ? stack[stack.length - 1].remaining : target) },
+      ],
+      ...extra,
+    });
+    flashAdd = false;
+  };
+
+  function bt(start, remaining, parentId, depth, parent) {
+    const id = nextId++;
+    const label = fmt(cur);
+    nodes.push({ id, parentId, key: String(id), label, depth, sub: `target ${neg(remaining)}`, cut: remaining < 0 });
+    const fr = { id, label, start, remaining, i: '—' };
+    stack.push(fr);
+
+    if (depth === 0) {
+      snap('call', 'A frame starts by asking two questions, not one. Is target exactly 0, meaning we landed on it? Then, is target below 0, meaning we overshot? Only after both does it try any choices.',
+        { active: id, flash: 'call', key: true });
+    } else {
+      pushes += 1;
+      const c = cand[parent.i];
+      const stayed = start === parent.start;
+      let caption;
+      let mark;
+      if (pushes === 1) {
+        mark = 'first';
+        caption = `Here is the whole difference from Subsets. The child's start is i, NOT i + 1. The floor did not move — this new frame may take the ${c} again. Meanwhile target came down by ${c}, from ${parent.remaining} to ${neg(remaining)}.`;
+      } else if (stayed) {
+        mark = 'reuse';
+        caption = `Take ${c} again. start stays ${start}, target drops to ${neg(remaining)}. Reuse costs nothing structurally — it is just a floor that refused to rise.`;
+      } else {
+        mark = 'rose';
+        caption = `Take ${c}. Now start becomes ${start}, because i is ${start} — the floor rose this time. From here ${words(cand.slice(0, start))} ${start === 1 ? 'is' : 'are'} out of reach, which is what stops ${fmt([cand[start - 1], cand[start]])} and ${fmt([cand[start], cand[start - 1]])} both existing.`;
+      }
+      snap('recurse', caption, { active: id, flash: 'call', key: true, mark });
+    }
+
+    const mark = res.length;
+
+    if (remaining === 0) {
+      snap('check', 'target reaches exactly 0 — the first exit fires. We landed on it.', { active: id, flash: 'best' });
+      res.push([...cur]);
+      flashAdd = true;
+      snap('record', `Record ${fmt(cur)}, then return immediately. The return matters: with target at 0 every further choice can only overshoot, so continuing the loop would be pure waste.`,
+        { active: id, flash: 'best', key: true, spoken: `Record ${combo(cur)}, then return immediately. The return matters: with target at 0 every further choice can only overshoot, so continuing the loop would be pure waste.` });
+      returns[id] = 1;
+      stack.pop();
+      return;
+    }
+
+    if (remaining < 0) {
+      pruned += 1;
+      snap('prune', `target is ${neg(remaining)} — the second exit fires and this branch is pruned. Killed for being wrong, not for running out of elements. That is new: Subsets had no way to be wrong.`,
+        { active: id, flash: 'return', key: true });
+      returns[id] = 0;
+      stack.pop();
+      return;
+    }
+
+    snap('loop', depth === 0
+      ? 'Neither exit fired, so the loop begins at i = start = 0.'
+      : `target is ${remaining}: not zero, not negative. Loop from start = ${start}${start > 0 ? `, so ${words(cand.slice(0, start))} ${start === 1 ? 'is' : 'are'} off the table` : `, so ${cand[0]} is still on the table`}.`,
+    { active: id });
+
+    for (let i = start; i < cand.length; i++) {
+      fr.i = i;
+      if (i > start) snap('loop', `i advances to ${i} while start stays ${start} — the same floor-and-cursor split as Subsets.`, { active: id });
+
+      cur.push(cand[i]);
+      snap('choose', `Take candidates[${i}] = ${cand[i]}. curr is ${fmt(cur)}.`,
+        { active: id, flash: 'call', spoken: `Take candidates at ${i}, which is ${cand[i]}. curr is ${words(cur)}.` });
+
+      bt(i, remaining - cand[i], id, depth + 1, fr);
+
+      cur.pop();
+      snap('unchoose', `Popped, and the ${cand[i]} is un-chosen. Back in ${fmt(cur)} with i still ${i}.`,
+        { active: id, flash: 'return', key: true, spoken: `Popped, and the ${cand[i]} is un-chosen. Back in ${words(cur)} with i still ${i}.` });
+    }
+
+    fr.i = 'done';
+    returns[id] = res.length - mark;
+    snap('loop', `${fmt(cur)} has tried every candidate from position ${start} and returns.`,
+      { active: id, flash: 'return', spoken: `${combo(cur)} has tried every candidate from position ${start} and returns.` });
+    stack.pop();
+  }
+
+  bt(0, target, null, 0, null);
+
+  frames.push({
+    ...blank,
+    anchor: 'done',
+    caption: res.length
+      ? `${plural(res.length, 'answer')}: ${res.map(fmt).join(' and ')}. ${nodes.length} nodes explored, ${pruned} of them pruned on arrival. With a bigger target the pruned share grows fast — which is exactly why sorting the candidates and breaking out of the loop early (the next tab) is worth mentioning in an interview.`
+      : `No combination of these candidates reaches ${target}. ${nodes.length} nodes explored, ${pruned} of them pruned on arrival.`,
+    spoken: res.length
+      ? `${plural(res.length, 'answer')}: ${res.map(words).join('; and ')}. ${nodes.length} nodes explored, ${pruned} of them pruned on arrival. With a bigger target the pruned share grows fast, which is exactly why sorting the candidates and breaking out of the loop early is worth mentioning in an interview.`
+      : null,
+    callStack: [],
+    returns: { ...returns },
+    revealed: nodes.length,
+    collected: { label: 'res', items: res.map(fmt), justAdded: null },
+    vars: [{ name: 'curr', value: '[ ]' }, { name: 'target', value: target }],
+    result: res.length,
+    flash: 'done',
+    key: true,
+  });
+
+  return { frames, answer: res.length, nodes, combos: res };
+}
+
+/* 2. Sorted, so a loop can stop the moment a candidate would overshoot. */
+
+function sortedFrames({ candidates: cand, target }) {
   const frames = [];
   const nodes = [];
   const stack = [];
@@ -512,7 +780,38 @@ export const approaches = [
   {
     id: 'loop',
     name: 'Backtracking',
-    tagline: 'Sorted, loop from start, recurse on j to reuse — and stop early.',
+    tagline: 'Subsets’ loop, minus one character: recurse on i, not i + 1.',
+    intuition: `
+      <p>We want every combination of candidates that adds up to the target, and a candidate
+      may be used any number of times. Build one combination at a time in a shared list
+      <code>curr</code>, looping over the candidates from <code>start</code> on — exactly as
+      Subsets did.</p>
+      <p>Two things change. The recursive call passes <code>i</code>, not <code>i + 1</code>:
+      the floor does not move, so the same candidate may be taken again. And a frame asks two
+      questions before choosing anything: is <code>target</code> exactly 0 — record and return;
+      is it below 0 — we overshot, return without recording.</p>`,
+    algorithm: [
+      'Define <code>backtrack(start, target, curr)</code>, where <code>target</code> is what is <em>left</em> to reach and <code>start</code> is the first position still allowed.',
+      'If <code>target == 0</code>, add a copy of <code>curr</code> to the result and return.',
+      'If <code>target < 0</code>, return — this branch overshot and is a dead end.',
+      'For each <code>i</code> from <code>start</code> to the end: <b>choose</b> — append <code>candidates[i]</code>; <b>explore</b> — call <code>backtrack(i, target − candidates[i], curr)</code> (the same <code>i</code>, so it may be reused); <b>un-choose</b> — pop it.',
+      'Start with <code>backtrack(0, target, [])</code> and return the result.',
+    ],
+    watchFor:
+      'Watch start in the stack frames on a push: when it does not move, that is the reuse. And watch for frames that return with nothing recorded — target went negative, and the branch was killed for being wrong.',
+    idea:
+      'Two questions, and Subsets’ loop. Q1 — complete answer? Only when the remaining target is exactly 0; below 0 the branch is a dead end, which Subsets never had. Q2 — what choices do I have? Everything from start on — and the recursive call passes i, not i + 1, so a candidate may be chosen again. That single character is the whole difference.',
+    time: 'O(2^(t/m))',
+    space: 'O(t/m)',
+    spaceNote: 'The deepest path uses the smallest candidate m over and over: t/m frames. The tree can reach 2^(t/m) nodes.',
+    stackPanel: 'call',
+    code: loopCode,
+    build: loopFrames,
+  },
+  {
+    id: 'sorted',
+    name: 'Sort, then break early',
+    tagline: 'The interview upgrade: sorted, so a loop can stop the moment a candidate overshoots.',
     intuition: `
       <p>Build one combination at a time in a shared list <code>cur</code>, looping over the
       candidates that are still allowed — from position <code>start</code> onward. Choosing <code>candidates[j]</code> and recursing
@@ -538,8 +837,8 @@ export const approaches = [
     space: 'O(t/m)',
     spaceNote: 'Same depth bound. The sorted break cannot change the worst case, but it removes every branch that could never succeed.',
     stackPanel: 'call',
-    code: loopCode,
-    build: loopFrames,
+    code: sortedCode,
+    build: sortedFrames,
   },
   {
     id: 'dfs',

@@ -809,3 +809,50 @@ svg.calltree { display: block; max-width: none; }
 .cx-measured dt { color: var(--ink-3); }
 .cx-measured dd { margin: 0; font-family: "JetBrains Mono", monospace; font-weight: 700; font-variant-numeric: tabular-nums; }
 .cx-note { margin: 12px 0 0; font-family: "Newsreader", Georgia, serif; font-size: 15px; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+
+/* ---------- lesson: embedded instrument, ledger, toggle ---------- */
+.lesson-embed { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+.lesson-ledger .tbl-hold { overflow-x: auto; }
+.lesson-ledger-head {
+  margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+  display: flex; gap: 8px; align-items: baseline;
+}
+.lesson-ledger-head em { font-style: normal; font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 12.5px; }
+.lesson-ledger table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lesson-ledger th { text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); padding: 0 10px 7px 0; border-bottom: 1px solid var(--rule); }
+.lesson-ledger td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--rule); font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; }
+.lesson-ledger td.v { font-weight: 700; }
+.lesson-ledger tr.take td { background: var(--done-soft); color: var(--done); }
+.lesson-ledger tr.skip td { background: var(--cut-soft); color: var(--cut); }
+.lesson-ledger tr.pending td { color: var(--ink-3); }
+.lesson-toggle-bar { display: flex; gap: 8px; margin-bottom: 14px; }
+.lesson-toggle-bar .btn code { font-size: 13px; }
+.lesson-cells { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.lesson-cell {
+  width: 88px; text-align: center; border: 1px solid var(--rule); border-radius: 6px; padding: 8px 4px; background: var(--paper);
+}
+.lesson-cell b { display: block; font-family: "JetBrains Mono", monospace; font-size: 17px; }
+.lesson-cell i { display: block; font-style: normal; font-size: 11px; color: var(--ink-3); margin-top: 3px; line-height: 1.3; }
+.lesson-cell.take { background: var(--done-soft); border-color: var(--done); }
+.lesson-cell.take b, .lesson-cell.take i { color: var(--done); }
+.lesson-cell.skip { background: var(--cut-soft); border-color: var(--cut); border-style: dashed; }
+.lesson-cell.skip b, .lesson-cell.skip i { color: var(--cut); }
+.lesson-cell.never { opacity: .45; }
+.lesson-outs { display: flex; gap: 7px; flex-wrap: wrap; }
+.lesson-out {
+  font-family: "JetBrains Mono", monospace; font-size: 12.5px; border-radius: 4px; padding: 3px 9px;
+  background: var(--done-soft); border: 1px solid var(--done); color: var(--done);
+}
+.lesson-out.lost { background: var(--cut-soft); border-color: var(--cut); color: var(--cut); text-decoration: line-through; }
+.lesson-verdict { margin: 14px 0 0; font-family: "Newsreader", Georgia, serif; font-size: 16px; line-height: 1.6; color: var(--ink-2); max-width: 70ch; }
+.lesson-actions .btn.key { border-color: var(--brand); color: var(--brand-ink); background: var(--brand-soft); }
+
+/* Call-tree nodes: two-line labels, dead ends, refused branches. */
+.cnodesub {
+  font-family: "JetBrains Mono", monospace; font-size: 9.5px; fill: var(--ink-3);
+  text-anchor: middle; dominant-baseline: central;
+}
+svg.calltree .cnode.cut { fill: var(--cut-soft); stroke: var(--cut); stroke-dasharray: 4 3; stroke-width: 1.6; }
+svg.calltree .cnode.cut + .cnodet, svg.calltree .cnode.cut ~ .cnodesub { fill: var(--cut); }
+svg.calltree .cnode.phantom { fill: var(--cut-soft); stroke: var(--cut); stroke-dasharray: 4 3; stroke-width: 1.4; }
+svg.calltree .cnode.phantom ~ .cnodet, svg.calltree .cnode.phantom ~ .cnodesub { fill: var(--cut); }

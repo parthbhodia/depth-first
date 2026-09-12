@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { highlight } from '#engine/highlight.js';
+import { fmt } from '#engine/frames.js';
 import { useNarration } from '~/composables/useNarration.js';
 
 /**
@@ -13,8 +14,10 @@ import { useNarration } from '~/composables/useNarration.js';
  *
  * Every visual is derived from real code and a real trace — a figure is a
  * frame of an actual run, annotated code resolves anchors to line numbers,
- * and a step can embed a whole (compact) instrument for a warm-up problem —
- * so nothing here can drift from what the instrument shows.
+ * a step can embed a whole (compact) instrument on the input the lesson is
+ * about, a ledger lists what that instrument's frames recorded, and a toggle
+ * runs the same builder with a different option — so nothing here can drift
+ * from what the instrument shows.
  */
 const props = defineProps({
   problem: { type: Object, required: true },
@@ -28,7 +31,7 @@ const steps = computed(() => props.lesson.steps);
 const step = computed(() => steps.value[at.value]);
 const isLast = computed(() => at.value === steps.value.length - 1);
 // A picture step reads like a slide: visual on top, one short thought under it.
-const visualFirst = computed(() => Boolean(step.value.figure || step.value.grow || step.value.instrument));
+const visualFirst = computed(() => Boolean(step.value.figure || step.value.grow || step.value.instrument || step.value.toggle));
 
 const go = (i) => { at.value = Math.max(0, Math.min(steps.value.length - 1, i)); grown.value = 1; };
 function start() { open.value = true; go(0); }
@@ -38,12 +41,74 @@ function finish() { close(); emit('jump', props.lesson.finish); }
 // A visual names the problem it draws: the page's own, or the lesson's warm-up.
 const probFor = (ref) => (ref && ref.problem === 'warmup' ? props.lesson.warmup : props.problem);
 
-// Jumps aimed at the embedded instrument stay here; the rest go to the page.
+/* ---------- the embedded instrument ----------
+   It runs the approach and input the step names, and reports its step so a
+   ledger beside it can fill as the reader moves. Keyed per step so a new
+   step gets a fresh instrument rather than one carrying old state. */
 const mini = ref(null);
+const miniApproach = ref(null);
+const miniInput = ref(null);
+const miniIndex = ref(0);
+watch(at, () => {
+  const s = step.value;
+  miniApproach.value = s.instrument?.approach ?? null;
+  miniInput.value = s.instrument?.input ?? null;
+  miniIndex.value = 0;
+}, { immediate: true });
+
+const miniBuilt = computed(() => {
+  const s = step.value;
+  if (!s.instrument) return null;
+  const p = probFor(s.instrument);
+  const a = p.approachById(miniApproach.value ?? s.instrument.approach);
+  return a.build(p.parseInput(miniInput.value ?? p.defaultInput));
+});
+
+// Jumps aimed at the embedded instrument stay here; the rest go to the page.
 function jump(j) {
-  if (j.target === 'warmup') { mini.value?.jumpTo(j); return; }
+  if (j.target === 'warmup' || j.target === 'embedded') { mini.value?.jumpTo(j); return; }
   emit('jump', j);
 }
+
+/* ---------- ledger: every time a test ran, filled as it happens ----------
+   Frames that evaluated something carry `test`; the rows are those frames,
+   revealed up to the embedded instrument's current step. */
+const ledgerRows = computed(() => {
+  const b = miniBuilt.value;
+  if (!b || !step.value.ledger) return [];
+  return b.frames
+    .map((f, idx) => (f.test ? { ...f.test, idx, shown: idx <= miniIndex.value } : null))
+    .filter(Boolean);
+});
+const yesno = (v) => (v === null || v === undefined ? 'n/a' : v ? 'true' : 'false');
+
+/* ---------- toggle: the same builder, a different option ----------
+   Each option re-runs the approach with its own build options. The first
+   option is the reference; anything it produces that another option loses
+   is struck through, and the root frame's loop is drawn cell by cell. */
+const toggleSel = ref(0);
+watch(at, () => { toggleSel.value = 0; });
+const toggleData = computed(() => {
+  const s = step.value;
+  if (!s.toggle) return null;
+  const p = probFor(s.toggle);
+  const a = p.approachById(s.toggle.approach);
+  const input = p.parseInput(s.toggle.input ?? p.defaultInput);
+  const runs = s.toggle.options.map((o) => a.build(input, o.opts || {}));
+  const collect = s.toggle.collect || 'subsets';
+  const base = runs[0][collect] || [];
+  return s.toggle.options.map((o, k) => {
+    const built = runs[k];
+    const have = new Set((built[collect] || []).map((x) => x.join(',')));
+    const outs = base.map((x) => ({ text: fmt(x), lost: !have.has(x.join(',')) }));
+    const rootTests = built.frames.filter((f) => f.test && (f.callStack || []).length === 1);
+    const byI = new Map(rootTests.map((f) => [f.test.i, f.test.verdict]));
+    const cells = input.map((v, i) => ({ v, i, verdict: byI.has(i) ? byI.get(i) : 'never' }));
+    const m = { count: have.size, lostCount: outs.filter((x) => x.lost).length, lost: outs.filter((x) => x.lost).map((x) => x.text) };
+    return { ...o, cells, outs, m, verdictText: typeof o.verdict === 'function' ? o.verdict(m) : o.verdict };
+  });
+});
+const cellNote = (opt, c) => (c.verdict === 'take' ? 'take it' : c.verdict === 'skip' ? opt.skipNote : 'never reached');
 
 /* ---------- read aloud ----------
    The same voice as the trace. Each step is one spoken thought; the prose is
@@ -94,7 +159,7 @@ const regrow = () => { grown.value = 1; };
       <div class="lesson-strip-text">
         <h2>{{ lesson.kicker }}</h2>
         <p class="lesson-thesis">{{ lesson.heading }}</p>
-        <p class="lesson-meta">New to backtracking? {{ steps.length }} short steps with pictures, before the code. About four minutes.</p>
+        <p class="lesson-meta">{{ lesson.invite || `New here? ${steps.length} short steps with pictures, before the code.` }}</p>
       </div>
       <button class="btn primary lesson-start" type="button" @click="start">▶ Start the lesson</button>
     </div>
@@ -161,12 +226,59 @@ const regrow = () => { grown.value = 1; };
             </div>
           </div>
 
-          <AlgoTrace
-            v-else-if="step.instrument"
-            ref="mini"
-            :problem="probFor(step.instrument)"
-            compact
-          />
+          <div v-else-if="step.instrument" class="lesson-embed">
+            <AlgoTrace
+              :key="'mini' + at"
+              ref="mini"
+              :problem="probFor(step.instrument)"
+              v-model:approach="miniApproach"
+              v-model:input="miniInput"
+              compact
+              @step="miniIndex = $event"
+            />
+            <div v-if="step.ledger" class="lesson-ledger">
+              <p class="lesson-ledger-head">{{ step.ledger.title || 'Every time the test runs' }} <em>filled as it happens</em></p>
+              <div class="tbl-hold">
+                <table>
+                  <thead><tr><th v-for="c in (step.ledger.columns || ['frame', 'index', 'i', 'i > index', 'equal?', 'verdict'])" :key="c">{{ c }}</th></tr></thead>
+                  <tbody>
+                    <tr v-for="r in ledgerRows" :key="r.idx" :class="r.shown ? r.verdict : 'pending'">
+                      <template v-if="r.shown">
+                        <td>{{ r.label }}</td><td>{{ r.index }}</td><td>{{ r.i }}</td>
+                        <td>{{ r.gt ? 'TRUE' : 'false' }}</td><td>{{ yesno(r.eq) }}</td><td class="v">{{ r.verdict }}</td>
+                      </template>
+                      <template v-else><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="v">—</td></template>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="step.toggle && toggleData" class="lesson-toggle">
+            <div class="lesson-toggle-bar" role="group" :aria-label="step.toggle.label || 'Variant'">
+              <button
+                v-for="(o, k) in toggleData"
+                :key="o.id"
+                class="btn"
+                :class="{ primary: k === toggleSel }"
+                type="button"
+                :aria-pressed="k === toggleSel ? 'true' : 'false'"
+                @click="toggleSel = k"
+              ><code>{{ o.label }}</code></button>
+            </div>
+            <p class="lesson-ledger-head">{{ step.toggle.cellsTitle || 'Root loop' }}</p>
+            <div class="lesson-cells">
+              <div v-for="c in toggleData[toggleSel].cells" :key="c.i" class="lesson-cell" :class="c.verdict">
+                <b>{{ c.v }}</b><i>i = {{ c.i }}</i><i>{{ cellNote(toggleData[toggleSel], c) }}</i>
+              </div>
+            </div>
+            <p class="lesson-ledger-head">{{ step.toggle.outsTitle || 'Everything the algorithm produces' }} <em>{{ toggleData[0].m.count }} when correct</em></p>
+            <div class="lesson-outs">
+              <span v-for="o in toggleData[toggleSel].outs" :key="o.text" class="lesson-out" :class="{ lost: o.lost }">{{ o.text }}</span>
+            </div>
+            <p class="lesson-verdict" v-html="toggleData[toggleSel].verdictText" />
+          </div>
 
           <div v-else-if="step.questions" class="lesson-qs">
             <div v-for="(q, i) in step.questions" :key="i" class="lesson-q">
@@ -201,6 +313,7 @@ const regrow = () => { grown.value = 1; };
               v-for="(j, i) in step.jumps"
               :key="i"
               class="btn"
+              :class="{ key: j.key }"
               type="button"
               @click="jump(j)"
             >{{ j.label }} ›</button>
