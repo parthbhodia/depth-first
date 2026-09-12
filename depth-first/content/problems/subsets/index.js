@@ -79,6 +79,12 @@ export default {
     neetcode: 'https://neetcode.io/problems/subsets',
   },
 
+  prerequisites: [
+    { title: 'Recursion', note: 'how a call stack grows and unwinds, and what a base case is', slug: 'maximum-depth-of-binary-tree' },
+    { title: 'DFS on a tree', note: 'visiting every node depth-first — backtracking is DFS on a tree you build as you go', slug: 'count-good-nodes-in-binary-tree' },
+    { title: 'Lists', note: 'appending, popping, and copying a list, and why a copy is not the same as a reference' },
+  ],
+
   blurb:
     'The cleanest place to watch choose / explore / un-choose, and the one problem where the recursion tree literally is the answer.',
 

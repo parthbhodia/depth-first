@@ -713,3 +713,49 @@ svg.calltree { display: block; max-width: none; }
 /* Stage-only instrument: no input row either; the lesson fixes the input. */
 .instrument.compact .inputs { display: none; }
 @media (max-width: 560px) { .lesson-meta { display: none; } .lesson-strip { gap: 12px; } }
+
+/* ---------- the brief: prerequisites, intuition, algorithm ---------- */
+
+.brief { margin-top: 26px; display: grid; gap: 22px; }
+.brief-block h2 {
+  font-size: 12px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--brand-ink); margin: 0 0 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.brief-block h2::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.brief-num { font-style: normal; font-family: "JetBrains Mono", monospace; color: var(--ink-3); }
+.brief-block h3 {
+  margin: 18px 0 6px; font-size: 18px; font-weight: 700; font-stretch: 106%;
+  letter-spacing: -.01em;
+}
+.brief-lead, .brief-prose p, .prereqs li, .algo li {
+  font-family: "Newsreader", Georgia, serif; font-size: 17px; line-height: 1.6; color: var(--ink-2);
+}
+.brief-lead { margin: 0 0 8px; }
+.brief-prose { max-width: 66ch; }
+.brief-prose p { margin: 0 0 10px; }
+.prereqs { margin: 0; padding-left: 22px; max-width: 66ch; }
+.prereqs li { margin: 4px 0; }
+.prereqs b, .algo b { color: var(--ink); }
+.prereq-link { margin-left: 8px; font-family: "Archivo", sans-serif; font-size: 13px; font-weight: 600; color: var(--brand-ink); text-decoration: none; white-space: nowrap; }
+.prereq-link:hover { text-decoration: underline; }
+.algo { margin: 0; padding-left: 26px; max-width: 66ch; }
+.algo li { margin: 6px 0; padding-left: 4px; }
+.algo li::marker { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--ink-3); }
+.brief .lesson { margin-top: 0; }
+.brief + .instrument { margin-top: 18px; }
+.grain { display: flex; gap: 2px; margin-left: 6px; }
+@media (max-width: 640px) { .grain { order: 5; flex-basis: 100%; } }
+/* Prerequisites as one line; intuition and algorithm side by side. */
+.prereq-band {
+  margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px;
+  font-size: 14px; color: var(--ink-3);
+}
+.prereq-band b { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--brand-ink); margin-right: 4px; }
+.prereq a, .prereq span { font-family: "Archivo", sans-serif; font-size: 13.5px; font-weight: 600; color: var(--ink-2); text-decoration: none; border-bottom: 1px dashed var(--rule-2); }
+.prereq a:hover { color: var(--brand-ink); border-bottom-style: solid; }
+.brief-num { margin-right: 8px; }
+.approach-brief-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 8px 36px; align-items: start; }
+.approach-brief-cols h3 { margin-top: 8px; }
+@media (max-width: 860px) { .approach-brief-cols { grid-template-columns: minmax(0, 1fr); } }
+.brief { gap: 16px; }

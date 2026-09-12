@@ -172,7 +172,7 @@ function frames(n) {
     snap('call', depth === 0
       ? 'Start with an empty path. One frame on the stack, nothing decided yet.'
       : `A new frame for path ${show(path)}.`,
-    { active: id, flash: 'call' });
+    { active: id, flash: 'call', key: depth === 0 });
 
     const mark = result.length;
 
@@ -182,7 +182,7 @@ function frames(n) {
       flashAdd = true;
       returns[id] = 1;
       snap('record', `Record ${show(path)}, then return — there is nothing left to choose here.`,
-        { active: id, flash: 'best' });
+        { active: id, flash: 'best', key: true });
       stack.pop();
       return;
     }
@@ -206,7 +206,7 @@ function frames(n) {
 
       path.pop();
       snap('unchoose', `Pop. The path is back to ${show(path)}, exactly as it was before choosing ${ch}. Now this same frame can try something different.`,
-        { active: id, flash: 'return' });
+        { active: id, flash: 'return', key: true });
     }
 
     fr.ch = 'done';
@@ -229,6 +229,7 @@ function frames(n) {
     vars: [{ name: 'path', value: '""' }],
     result: result.length,
     flash: 'done',
+    key: true,
   });
 
   return { frames: out, answer: result.length, nodes, strings: result };

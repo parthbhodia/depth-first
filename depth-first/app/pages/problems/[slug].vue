@@ -28,6 +28,10 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
 });
 
+// The brief above the instrument follows the tab that is selected below it.
+const approachId = ref(problem.approaches[0].id);
+const activeApproach = computed(() => problem.approachById(approachId.value));
+
 // The lesson hands off to the instrument: land on a frame, or play.
 const trace = ref(null);
 function scrollToTrace() {
@@ -80,9 +84,11 @@ useHead({
       <p class="lede short" v-html="problem.blurb" />
     </header>
 
-    <PatternLesson v-if="problem.lesson" :problem="problem" :lesson="problem.lesson" @jump="onJump" @skip="scrollToTrace" />
+    <ProblemBrief :problem="problem" :approach="activeApproach">
+      <PatternLesson v-if="problem.lesson" :problem="problem" :lesson="problem.lesson" @jump="onJump" @skip="scrollToTrace" />
+    </ProblemBrief>
 
-    <AlgoTrace id="trace" ref="trace" :problem="problem" />
+    <AlgoTrace id="trace" ref="trace" v-model:approach="approachId" :problem="problem" />
 
     <article class="essay lead">
       <section>

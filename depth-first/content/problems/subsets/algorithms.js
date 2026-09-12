@@ -370,7 +370,7 @@ function loopFrames(nums) {
     snap('call', depth === 0
       ? 'Here we go. A subset is any group of some of our numbers — even none of them. Our list curr starts empty, and there is no i yet: the for loop will create it.'
       : `A new frame starts, with index = ${index}. It may only pick from position ${index} onward. Every frame under it is paused in its own loop, each remembering its own i.`,
-    { active: id, flash: 'call' });
+    { active: id, flash: 'call', key: depth === 0 });
 
     const mark = res.length;
     res.push([...curr]);
@@ -379,7 +379,7 @@ function loopFrames(nums) {
     snap('record', depth === 0
       ? 'First, save what we have — even though it is empty. The empty subset counts too, and it costs nothing extra.'
       : record(fmt(curr)),
-    { active: id, flash: 'best', spoken: depth === 0 ? null : record(subset(curr)) });
+    { active: id, flash: 'best', key: true, spoken: depth === 0 ? null : record(subset(curr)) });
 
     for (let i = index; i < nums.length; i++) {
       fr.i = i;
@@ -399,7 +399,7 @@ function loopFrames(nums) {
 
       curr.pop();
       const undo = (list) => `Un-pick it. curr.pop() takes ${nums[i]} back out, so curr is ${list} again — exactly as it was before the pick. Every later sibling depends on that undo being perfect.`;
-      snap('unchoose', undo(fmt(curr)), { active: id, flash: 'return', spoken: undo(words(curr)) });
+      snap('unchoose', undo(fmt(curr)), { active: id, flash: 'return', key: true, spoken: undo(words(curr)) });
     }
 
     fr.i = 'done';
@@ -425,6 +425,7 @@ function loopFrames(nums) {
     vars: [{ name: 'curr', value: fmt(curr) }],
     result: res.length,
     flash: 'done',
+    key: true,
   });
 
   return { frames, answer: res.length, nodes, subsets: res };
@@ -475,7 +476,7 @@ function binaryFrames(nums) {
     if (depth === 0) arrive = 'One frame per number, and just two choices in each: put it in, or leave it out.';
     else if (i < nums.length) arrive = `A new frame for i = ${i}. It answers one question only: is ${nums[i]} in, or out?`;
     else arrive = 'A new frame — and every number has already been decided.';
-    snap('call', arrive, { active: id, flash: 'call' });
+    snap('call', arrive, { active: id, flash: 'call', key: depth === 0 });
 
     const mark = res.length;
 
@@ -485,7 +486,7 @@ function binaryFrames(nums) {
       flashAdd = true;
       returns[id] = 1;
       const record = (list) => `Save ${list}. In this version answers appear only at the leaves — one leaf, one subset — and there are exactly 2^n leaves.`;
-      snap('record', record(fmt(curr)), { active: id, flash: 'best', spoken: record(subset(curr)) });
+      snap('record', record(fmt(curr)), { active: id, flash: 'best', key: true, spoken: record(subset(curr)) });
       stack.pop();
       return;
     }
@@ -496,7 +497,7 @@ function binaryFrames(nums) {
 
     curr.pop();
     snap('exclude', `Now the right branch: take ${nums[i]} back out and try without it. Notice the child looks just like this node — leaving a number out does not change curr. That is what makes this a yes-or-no choice instead of a loop.`,
-      { active: id, flash: 'return' });
+      { active: id, flash: 'return', key: true });
     dfs(i + 1, id, depth + 1);
 
     returns[id] = res.length - mark;
@@ -518,6 +519,7 @@ function binaryFrames(nums) {
     vars: [{ name: 'curr', value: fmt(curr) }],
     result: res.length,
     flash: 'done',
+    key: true,
   });
 
   return { frames, answer: res.length, nodes, subsets: res };
@@ -554,7 +556,7 @@ function bitmaskFrames(nums) {
   };
 
   bits = new Array(n).fill(0);
-  snap('init', `No recursion and no stack. We simply count from 0 to ${total - 1}. Each number has ${plural(n, 'bit')}, and each bit is a yes-or-no for one of our numbers — the same question the tree asked, written as a number.`, {});
+  snap('init', `No recursion and no stack. We simply count from 0 to ${total - 1}. Each number has ${plural(n, 'bit')}, and each bit is a yes-or-no for one of our numbers — the same question the tree asked, written as a number.`, { key: true });
 
   for (let mask = 0; mask < total; mask++) {
     bits = [];
@@ -590,6 +592,7 @@ function bitmaskFrames(nums) {
     const record = (list) => `mask ${mask} spells out ${list}. One number, one subset — nothing to branch on, nothing to undo.`;
     snap('record', record(fmt(curr)), {
       flash: 'best',
+      key: true,
       spoken: record(subset(curr)),
       vars: [{ name: 'mask', value: `${mask} (${binary})` }, { name: 'curr', value: fmt(curr) }],
     });
@@ -603,6 +606,7 @@ function bitmaskFrames(nums) {
     collected: { label: 'res', items: res.map(fmt), justAdded: null },
     result: res.length,
     flash: 'done',
+    key: true,
   });
 
   return { frames, answer: res.length, nodes: [], subsets: res };
@@ -615,6 +619,21 @@ export const approaches = [
     id: 'loop',
     name: 'Backtracking',
     tagline: 'Choose, explore, un-choose — and every path is an answer.',
+    intuition: `
+      <p>We want every subset of <code>nums</code>. Build one at a time in a shared list
+      <code>curr</code>: pick a number, explore everything that can follow it, then take
+      the number back out and try the next one.</p>
+      <p>Every path we are on is itself a subset, so we record <code>curr</code> the moment
+      we arrive — there is no "done" check. To avoid making the same subset twice, a call
+      may only pick numbers to the right of the one just taken.</p>`,
+    algorithm: [
+      'Define a recursive function <code>backtrack(index, curr)</code>, where <code>index</code> is the first position still allowed and <code>curr</code> is the subset being built.',
+      'Add a copy of <code>curr</code> to the result immediately — every path is a valid subset.',
+      'For each <code>i</code> from <code>index</code> to the end: <b>choose</b> — append <code>nums[i]</code> to <code>curr</code>.',
+      '<b>Explore</b> — call <code>backtrack(i + 1, curr)</code>, so later calls only look to the right.',
+      '<b>Un-choose</b> — pop <code>nums[i]</code> back off before trying the next <code>i</code>.',
+      'Start with <code>backtrack(0, [])</code> and return the result.',
+    ],
     watchFor:
       'Watch curr in the State panel, and watch i in each stack frame. curr returns to exactly what it was before every choice; i picks up exactly where it left off.',
     idea:
@@ -631,6 +650,20 @@ export const approaches = [
     id: 'binary',
     name: 'Include / exclude',
     tagline: 'One question per number: in, or out? Answers only at the leaves.',
+    intuition: `
+      <p>Look at the numbers one at a time. For each one there are exactly two choices:
+      put it in the subset, or leave it out. Making both choices for every number draws a
+      binary tree with one level per number.</p>
+      <p>A subset is complete only once every number has been decided, so answers live
+      at the leaves — and there are exactly <code>2ⁿ</code> of them.</p>`,
+    algorithm: [
+      'Define <code>dfs(i, curr)</code>, where <code>i</code> is the number being decided and <code>curr</code> holds the numbers taken so far.',
+      'If <code>i == len(nums)</code>, every number has been decided: add a copy of <code>curr</code> to the result and return.',
+      '<b>Take it</b> — append <code>nums[i]</code> to <code>curr</code> and call <code>dfs(i + 1, curr)</code>.',
+      'Pop <code>nums[i]</code> back off (backtrack).',
+      '<b>Skip it</b> — call <code>dfs(i + 1, curr)</code> without it.',
+      'Start with <code>dfs(0, [])</code> and return the result.',
+    ],
     watchFor:
       'Watch the bottom row: every leaf is one subset and there are exactly 2ⁿ of them. And watch curr.pop() between the two branches — that one line is what lets a single list walk every path.',
     idea:
@@ -647,6 +680,16 @@ export const approaches = [
     id: 'bitmask',
     name: 'Bitmask',
     tagline: 'Count from 0 to 2ⁿ − 1 and read the bits.',
+    intuition: `
+      <p>Every subset is a yes/no decision per number — which is exactly what the bits of
+      an <code>n</code>-bit integer are. Counting from <code>0</code> to <code>2ⁿ − 1</code>
+      visits every pattern of decisions once, with no recursion and no stack.</p>`,
+    algorithm: [
+      'For each <code>mask</code> from <code>0</code> to <code>2ⁿ − 1</code>: start a fresh empty <code>curr</code>.',
+      'For each <code>i</code> from <code>0</code> to <code>n − 1</code>: if bit <code>i</code> of <code>mask</code> is set, append <code>nums[i]</code>.',
+      'Add <code>curr</code> to the result — one subset per integer.',
+      'Return the result.',
+    ],
     watchFor:
       'Watch the bit row against the subset that comes out. The mask is the include/exclude tree, flattened into an integer.',
     idea:

@@ -13,7 +13,13 @@ const props = defineProps({
   compact: { type: Boolean, default: false },
 });
 
-const approachId = ref(props.problem.approaches[0].id);
+// The selected approach is a model so the page can show its brief; a parent
+// that binds nothing gets the first approach (defineModel cannot see props).
+const approachModel = defineModel('approach');
+const approachId = computed({
+  get: () => approachModel.value ?? props.problem.approaches[0].id,
+  set: (v) => { approachModel.value = v; },
+});
 const langId = ref('python');
 const treeText = ref(props.problem.defaultInput);
 
@@ -27,7 +33,20 @@ const input = computed(() => props.problem.parseInput(treeText.value));
 // Recomputing every frame from scratch on each change is cheap (a few hundred
 // objects) and keeps the trace and the picture impossible to desynchronise.
 const built = computed(() => approach.value.build(input.value));
-const framesRef = computed(() => built.value.frames);
+
+// A trace has two grains. Key moments — the choices, the records, the pops —
+// read like a walkthrough; every step shows the bookkeeping between them.
+// Frames opt in with `key`; a trace without any has only the fine grain.
+// Embedded instruments narrate exact step numbers, so they start fine.
+const keyable = computed(() => built.value.frames.some((f) => f.key));
+const coarse = ref(!props.compact);
+const framesRef = computed(() =>
+  (coarse.value && keyable.value ? built.value.frames.filter((f) => f.key) : built.value.frames));
+function setGrain(key) {
+  coarse.value = key;
+  try { localStorage.setItem('depthfirst.grain', key ? 'key' : 'all'); } catch { /* ignore */ }
+  restart();
+}
 
 // A binary tree is the INPUT and is known up front. A call tree is the
 // EXECUTION — laid out once over every call the run will make, then revealed.
@@ -217,6 +236,7 @@ const focusZone = computed(() => (tourStop.value ? tourStop.value.focus : null))
 function applyStop() {
   const stop = tourStop.value;
   if (!stop) return;
+  coarse.value = false;
   if (stop.approach && stop.approach !== approachId.value) approachId.value = stop.approach;
   started.value = true;
 
@@ -268,6 +288,7 @@ function endTour() {
 // frame, or play from the top. Same mechanics as a tour stop.
 function jumpTo(target) {
   if (!target) return;
+  coarse.value = false;
   if (target.approach && target.approach !== approachId.value) approachId.value = target.approach;
   started.value = true;
   nextTick(() => {
@@ -309,7 +330,13 @@ function onKey(e) {
   else if (e.key === 'v' || e.key === 'V') toggleNarration();
 }
 
-onMounted(() => { if (!props.compact) window.addEventListener('keydown', onKey); });
+onMounted(() => {
+  if (!props.compact) window.addEventListener('keydown', onKey);
+  try {
+    const g = localStorage.getItem('depthfirst.grain');
+    if (g && !props.compact) coarse.value = g === 'key';
+  } catch { /* ignore */ }
+});
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey);
   cancelSpeech();
@@ -358,6 +385,10 @@ onBeforeUnmount(() => {
         :aria-pressed="voiceOn ? 'true' : 'false'"
         @click="toggleNarration"
       >{{ voiceOn ? '🔊' : '🔇' }}</button>
+      <span v-if="keyable" class="grain" role="group" aria-label="Trace detail">
+        <button class="lang" type="button" :aria-pressed="coarse ? 'true' : 'false'" @click="setGrain(true)">Key moments</button>
+        <button class="lang" type="button" :aria-pressed="coarse ? 'false' : 'true'" @click="setGrain(false)">Every step</button>
+      </span>
       <span class="speed">
         <button
           v-for="sp in [0.5, 1, 2]"
