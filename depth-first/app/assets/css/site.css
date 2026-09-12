@@ -759,3 +759,10 @@ svg.calltree { display: block; max-width: none; }
 .approach-brief-cols h3 { margin-top: 8px; }
 @media (max-width: 860px) { .approach-brief-cols { grid-template-columns: minmax(0, 1fr); } }
 .brief { gap: 16px; }
+
+/* ---------- homepage: problems grouped by family ---------- */
+.family { margin-top: 26px; }
+.family-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 4px; }
+.family-head h3 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .01em; }
+.family-meta { font-family: "Newsreader", Georgia, serif; font-size: 14.5px; color: var(--ink-3); }
+.family .plist { border-top: 1px solid var(--rule); }

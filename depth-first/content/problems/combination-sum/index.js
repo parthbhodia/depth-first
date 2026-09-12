@@ -64,10 +64,10 @@ export default {
   callLayout: { nodeW: 84, xGap: 96 },
 
   video: {
-    // Verified via YouTube oEmbed: author_name "NeetCode".
-    youtubeId: 'GBKI9VSKdGg',
-    title: 'Combination Sum - Backtracking - Leetcode 39 - Python',
-    channel: 'NeetCode',
+    // Chosen by the site owner; title and author verified via YouTube oEmbed.
+    youtubeId: 'obBSF4AG3qU',
+    title: 'Combination Sum (Leetcode 39) - Medium (Hindi) | Facebook Interview Question',
+    channel: 'The Hustling Engineer',
   },
 
   links: {

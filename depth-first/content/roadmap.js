@@ -21,7 +21,7 @@ const NODES = [
     problems: [102, 199] },
   { id: 'backtracking', label: 'Backtracking', col: 1, row: 1,
     blurb: 'Choose, explore, un-choose.',
-    problems: [78, 46, 39] },
+    problems: [78, 90, 46, 39, 77, 22] },
   { id: 'dp1', label: '1-D dynamic programming', col: 1, row: 2,
     blurb: 'Recursion → memo → table.',
     problems: [70, 746, 198, 322] },

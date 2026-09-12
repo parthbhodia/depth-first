@@ -4,6 +4,8 @@ import climbingStairs from './problems/climbing-stairs/index.js';
 import consistentHashing from './problems/consistent-hashing/index.js';
 import subsets from './problems/subsets/index.js';
 import combinationSum from './problems/combination-sum/index.js';
+import subsetsII from './problems/subsets-ii/index.js';
+import permutations from './problems/permutations/index.js';
 
 /**
  * The site's problem registry.
@@ -26,7 +28,7 @@ import combinationSum from './problems/combination-sum/index.js';
  *   lesson       optional intuition-first stepper shown above the trace; its
  *                jumps and annotated code refer to approaches and anchors
  */
-export const problems = [maxDepthBinaryTree, countGoodNodes, climbingStairs, subsets, combinationSum, consistentHashing];
+export const problems = [maxDepthBinaryTree, countGoodNodes, climbingStairs, subsets, subsetsII, permutations, combinationSum, consistentHashing];
 
 export const problemBySlug = (slug) => problems.find((p) => p.slug === slug) || null;
 

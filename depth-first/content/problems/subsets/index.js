@@ -68,10 +68,10 @@ export default {
   callLayout: { nodeW: 84, xGap: 96 },
 
   video: {
-    // Verified via YouTube oEmbed: author_name "NeetCode".
-    youtubeId: 'REOH22Xwdkk',
-    title: 'Subsets - Backtracking - Leetcode 78',
-    channel: 'NeetCode',
+    // Chosen by the site owner; title and author verified via YouTube oEmbed.
+    youtubeId: 'kYY9DotIKlo',
+    title: 'Subsets (Leetcode 78) - Medium (Hindi) | Backtracking + Iterative solution',
+    channel: 'The Hustling Engineer',
   },
 
   links: {
@@ -390,9 +390,8 @@ for first in ["A", "B"]:
           nowhere to prune. Add any constraint worth pruning on and the tree comes straight back.
         </p>
         <p>
-          Worth knowing if you learned this elsewhere: the NeetCode walkthrough below teaches the
-          include/exclude shape, so it lines up with the second tab. Both forms are correct and
-          both are common. The loop form is the one to have in muscle memory, because Subsets II,
+          Worth knowing if you learned this elsewhere: many walkthroughs draw the yes/no tree,
+          which lines up with the second tab. Both forms are correct and both are common. The loop form is the one to have in muscle memory, because Subsets II,
           Combination Sum and Combinations are all edits to it.
         </p>
       `,
