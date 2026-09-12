@@ -21,7 +21,13 @@ const approachId = computed({
   set: (v) => { approachModel.value = v; },
 });
 const langId = ref('python');
-const treeText = ref(props.problem.defaultInput);
+// The input is a model too, so a section elsewhere on the page (the complexity
+// panel) can count the very run the reader is looking at.
+const inputModel = defineModel('input');
+const treeText = computed({
+  get: () => inputModel.value ?? props.problem.defaultInput,
+  set: (v) => { inputModel.value = v; },
+});
 
 const approach = computed(() => props.problem.approachById(approachId.value));
 const isCallTree = computed(() => props.problem.stage === 'call-tree');

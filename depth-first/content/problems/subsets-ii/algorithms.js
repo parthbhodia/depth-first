@@ -435,6 +435,90 @@ function setFrames(nums) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Complexity, stated and then counted on the trace (see ComplexityPanel) */
+/* ------------------------------------------------------------------ */
+
+const sizeOf = (nums) => ({ n: nums.length, label: `nums = [${nums.join(',')}], so n = ${nums.length}` });
+const lead = (m) => `Counted on ${m.label}. Change the input in the trace above and every number here follows.`;
+
+const loopComplexity = {
+  size: sizeOf,
+  lead,
+  time: {
+    bound: 'O(n · 2ⁿ)',
+    count: 'sum',
+    iterationAnchors: ['choose', 'skip'],
+    story: [
+      (m) => `Every node is an answer, so the tree has exactly as many nodes as there are subsets: ${m.calls} here. With no repeated values that would be 2ⁿ = ${2 ** m.n}; the skips remove the rest.`,
+      (m) => `Each subset is copied when it is recorded, at most n = ${m.n} numbers: ${m.answers} × ${m.n} ≤ ${m.answers * m.n} element writes. That is the <code>n · 2ⁿ</code> in the worst case.`,
+      'The loop in a frame at depth d looks at n − d positions, and a skip costs one comparison. Summed over every frame that is still O(n · 2ⁿ) — the bound does not improve, the tree does.',
+    ],
+    final: (m) => `${m.levels.join(' + ')} = ${m.calls} nodes, every one of them an answer.`,
+    loops: [
+      {
+        anchor: 'loop',
+        runs: '<code>n − index</code> times in the frame that owns it — everything to the right of the last pick.',
+        measured: (m) => `${m.iterations} iterations in total: ${m.by.choose || 0} started a branch, ${m.by.skip || 0} were skipped as duplicates of a sibling.`,
+      },
+      {
+        anchor: 'skip',
+        runs: 'Once per iteration — one comparison against the previous value on the same level.',
+        measured: (m) => `${m.by.skip || 0} branch${(m.by.skip || 0) === 1 ? '' : 'es'} refused before existing.`,
+      },
+    ],
+    note: 'Quote O(n · 2ⁿ), then say the skip removes duplicate branches without changing the bound. Interviewers ask for both halves.',
+  },
+  space: {
+    bound: 'O(n)',
+    story: [
+      (m) => `The stack is at most n + 1 = ${m.n + 1} frames deep, and <code>curr</code> holds at most n numbers — shared by every branch, restored by every pop.`,
+      'Sorting is in place. No set, no map: nothing grows with the number of subsets except the result you return.',
+    ],
+    measured: (m) => [
+      ['Deepest stack', `${m.maxDepth} frames`],
+      ['Frames created in total', `${m.calls}`],
+      ['Subsets recorded', `${m.answers}`],
+    ],
+  },
+};
+
+const setComplexity = {
+  size: sizeOf,
+  lead,
+  time: {
+    bound: 'O(n · 2ⁿ)',
+    count: 'sum',
+    iterationAnchors: ['choose'],
+    story: [
+      (m) => `Nothing stops a duplicate branch, so the tree is the full Subsets tree: 2ⁿ = ${m.calls} nodes on this input, ${m.answers} of them answers and ${m.by.reject || 0} thrown away.`,
+      (m) => `Every arrival hashes <code>curr</code> — O(n) each — and every kept subset is copied: ${m.calls} × ${m.n} = ${m.calls * m.n} element reads and writes, duplicates included.`,
+      'Same bound as the first tab, but the first tab reaches it only when nothing repeats. This one always does the full 2ⁿ.',
+    ],
+    final: (m) => `${m.levels.join(' + ')} = ${m.calls} nodes; ${m.by.reject || 0} of them built a subset the set already had.`,
+    loops: [
+      {
+        anchor: 'loop',
+        runs: '<code>n − index</code> times in the frame that owns it, with no skip — every position starts a branch.',
+        measured: (m) => `${m.iterations} iterations, every one of them a branch. Compare the first tab on the same input.`,
+      },
+    ],
+    note: 'The set fixes the answer, not the work. Say so when you offer it as a first draft.',
+  },
+  space: {
+    bound: 'O(n · 2ⁿ)',
+    story: [
+      (m) => `The stack is still n + 1 = ${m.n + 1} frames at most.`,
+      (m) => `But <code>seen</code> holds every subset ever recorded — ${m.answers} here, up to 2ⁿ in general, each up to n long. That is working memory, on top of the result.`,
+    ],
+    measured: (m) => [
+      ['Deepest stack', `${m.maxDepth} frames`],
+      ['Subsets kept in the set', `${m.answers}`],
+      ['Duplicates built and dropped', `${m.by.reject || 0}`],
+    ],
+  },
+};
+
+/* ------------------------------------------------------------------ */
 
 export const approaches = [
   {
@@ -463,6 +547,7 @@ export const approaches = [
     time: 'O(n · 2ⁿ)',
     space: 'O(n)',
     spaceNote: 'The same n-deep stack as Subsets. Fewer nodes than 2ⁿ whenever the input repeats.',
+    complexity: loopComplexity,
     stackPanel: 'call',
     code: loopCode,
     build: loopFrames,
@@ -491,6 +576,7 @@ export const approaches = [
     time: 'O(n · 2ⁿ)',
     space: 'O(n · 2ⁿ)',
     spaceNote: 'The set holds every subset ever recorded, on top of the stack.',
+    complexity: setComplexity,
     stackPanel: 'call',
     code: setCode,
     build: setFrames,

@@ -766,3 +766,46 @@ svg.calltree { display: block; max-width: none; }
 .family-head h3 { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .01em; }
 .family-meta { font-family: "Newsreader", Georgia, serif; font-size: 14.5px; color: var(--ink-3); }
 .family .plist { border-top: 1px solid var(--rule); }
+
+/* ---------- time and space complexity, counted on the run ---------- */
+
+.cx { margin-top: 40px; }
+.cx > h2 {
+  font-size: 12px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--brand-ink); margin: 0 0 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.cx > h2::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.cx-lead { margin: 0 0 16px; font-family: "Newsreader", Georgia, serif; font-size: 16.5px; line-height: 1.6; color: var(--ink-2); max-width: 66ch; }
+.cx-cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px 36px; align-items: start; }
+@media (max-width: 860px) { .cx-cols { grid-template-columns: minmax(0, 1fr); } }
+.cx-block h3 {
+  margin: 0 0 8px; font-size: 18px; font-weight: 700; font-stretch: 106%; letter-spacing: -.01em;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.cx-block h3 b { font-family: "JetBrains Mono", monospace; font-size: 15px; font-weight: 700; color: var(--brand-ink); }
+.cx-story { margin: 0; padding-left: 22px; max-width: 62ch; }
+.cx-story li { font-family: "Newsreader", Georgia, serif; font-size: 16.5px; line-height: 1.6; color: var(--ink-2); margin: 4px 0; }
+.cx-story li::marker { font-family: "JetBrains Mono", monospace; font-size: 12.5px; color: var(--ink-3); }
+.cx-anim { margin-top: 16px; padding: 14px 16px 12px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); }
+.cx-levels { display: grid; gap: 6px; }
+.cx-level { display: grid; grid-template-columns: 64px minmax(0, 1fr) 40px; gap: 10px; align-items: center; opacity: .35; transition: opacity .3s; }
+.cx-level.on { opacity: 1; }
+.cx-lvl { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em; color: var(--ink-3); text-transform: uppercase; }
+.cx-bar { display: block; height: 14px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
+.cx-bar i { display: block; height: 100%; width: 0; background: var(--brand); transition: width .5s ease; }
+.cx-count { font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.cx-eq {
+  margin: 12px 0 0; font-family: "JetBrains Mono", monospace; font-size: 15px; font-weight: 700;
+  color: var(--ink); min-height: 1.4em;
+}
+.cx-final { margin: 6px 0 0; font-family: "Newsreader", Georgia, serif; font-size: 15px; color: var(--ink-2); }
+.cx-anim .btn { margin-top: 10px; }
+.cx-loops { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14px; }
+.cx-loops th { text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); padding: 6px 8px 6px 0; border-bottom: 1px solid var(--rule); }
+.cx-loops td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--ink-2); line-height: 1.5; }
+.cx-loops td:first-child code { font-size: 12.5px; white-space: nowrap; }
+.cx-measured { margin: 12px 0 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; font-size: 14.5px; }
+.cx-measured dt { color: var(--ink-3); }
+.cx-measured dd { margin: 0; font-family: "JetBrains Mono", monospace; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cx-note { margin: 12px 0 0; font-family: "Newsreader", Georgia, serif; font-size: 15px; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }

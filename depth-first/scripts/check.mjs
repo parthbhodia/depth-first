@@ -74,6 +74,31 @@ function checkProblem(problem) {
     }
   }
 
+  // A complexity panel counts the trace by anchor and quotes source lines by
+  // anchor; both must exist, and every story line must render to text.
+  for (const approach of problem.approaches) {
+    const cx = approach.complexity;
+    if (!cx) continue;
+    const dflt = problem.parseInput(problem.defaultInput);
+    const built = approach.build(dflt);
+    for (const l of cx.time.loops || []) {
+      for (const lang of languages) {
+        if (!approach.code[lang.id]?.anchors[l.anchor]) fail(`${approach.id}/${lang.id}: complexity loop anchor "${l.anchor}" missing`);
+      }
+    }
+    for (const a of cx.time.iterationAnchors || []) {
+      if (!built.frames.some((fr) => fr.anchor === a)) fail(`${approach.id}: complexity iteration anchor "${a}" never occurs on the default input`);
+    }
+    const m = { n: 0, label: "", calls: 0, leaves: 0, answers: 0, iterations: 0, by: {}, maxDepth: 0, frames: 0, levels: [1] };
+    const say = (x) => (typeof x === "function" ? x(m) : x);
+    try {
+      [cx.lead, cx.time.final, cx.time.note, cx.space.note, ...cx.time.story, ...cx.space.story, ...(cx.time.loops || []).flatMap((l) => [l.runs, l.measured])].forEach(say);
+      say(cx.space.measured);
+    } catch (e) {
+      fail(`${approach.id}: complexity text threw: ${e.message}`);
+    }
+  }
+
   const sample = problem.parseInput(problem.defaultInput);
   for (const approach of problem.approaches) {
     const { frames, nodes } = approach.build(sample);

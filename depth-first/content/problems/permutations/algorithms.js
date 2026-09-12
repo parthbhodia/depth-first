@@ -478,6 +478,87 @@ function swapFrames(input) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Complexity, stated and then counted on the trace (see ComplexityPanel) */
+/* ------------------------------------------------------------------ */
+
+const sizeOf = (nums) => ({ n: nums.length, label: `nums = [${nums.join(',')}], so n = ${nums.length}` });
+const lead = (m) => `Counted on ${m.label}. Change the input in the trace above and every number here follows.`;
+
+const usedComplexity = {
+  size: sizeOf,
+  lead,
+  time: {
+    bound: 'O(n · n!)',
+    count: 'product',
+    iterationAnchors: ['choose', 'skip'],
+    story: [
+      (m) => `Position 1 can take any of the ${m.n} numbers, position 2 any of the ${m.n - 1} left, and so on: ${m.n}! = ${m.leaves} complete orderings, one per leaf.`,
+      (m) => `Every leaf copies its ${m.n} numbers into the result: ${m.leaves} × ${m.n} = ${m.leaves * m.n} element writes. That is the <code>n · n!</code>.`,
+      'The loop is the same order. A frame runs it n times whatever its depth — used numbers are skipped, not avoided — and there are fewer than e · n! frames in total, so the loop work is also O(n · n!).',
+    ],
+    final: (m) => `${m.leaves} leaves × ${m.n} to copy each = ${m.leaves * m.n}.`,
+    loops: [
+      {
+        anchor: 'loop',
+        runs: (m) => `<code>n = ${m.n}</code> times in every non-leaf frame, no matter how deep — the used numbers are skipped inside the loop, not left out of it.`,
+        measured: (m) => `${m.iterations} iterations across ${m.calls - m.leaves} non-leaf frames: ${m.by.choose || 0} placed a number, ${m.by.skip || 0} skipped a used one.`,
+      },
+    ],
+    note: 'Say the factorial first, then the copy. Quoting O(n!) alone is the same small miss as forgetting the copy on Subsets.',
+  },
+  space: {
+    bound: 'O(n)',
+    story: [
+      (m) => `The stack is never deeper than n + 1 = ${m.n + 1} frames: one per number placed, plus the leaf that records.`,
+      (m) => `<code>curr</code> holds at most n = ${m.n} numbers and <code>used</code> is n flags. Both are shared by every branch and put back on the way up — never copied per frame.`,
+      'The result is n · n! numbers, but that is the output you were asked for, not working memory.',
+    ],
+    measured: (m) => [
+      ['Deepest stack', `${m.maxDepth} frames`],
+      ['Frames created in total', `${m.calls}`],
+      ['Permutations recorded', `${m.answers}`],
+    ],
+  },
+};
+
+const swapComplexity = {
+  size: sizeOf,
+  lead,
+  time: {
+    bound: 'O(n · n!)',
+    count: 'product',
+    iterationAnchors: ['swap'],
+    story: [
+      (m) => `Position 0 has ${m.n} candidates, position 1 has ${m.n - 1}, and so on: ${m.n}! = ${m.leaves} leaves, each a complete ordering.`,
+      (m) => `Every leaf copies the array: ${m.leaves} × ${m.n} = ${m.leaves * m.n} element writes — the same <code>n · n!</code> as the first tab.`,
+      'The loop is cheaper here: a frame at depth d runs it n − d times, not n, because the placed numbers are already out of the way. That trims the constant, not the bound.',
+    ],
+    final: (m) => `${m.leaves} leaves × ${m.n} to copy each = ${m.leaves * m.n}.`,
+    loops: [
+      {
+        anchor: 'loop',
+        runs: '<code>n − first</code> times in the frame that owns it: only the unplaced numbers are candidates for position <code>first</code>.',
+        measured: (m) => `${m.iterations} swaps in total — one per non-root frame, because every iteration creates exactly one child.`,
+      },
+    ],
+    note: 'Two swaps per child instead of a push, a pop and two flag writes. Same complexity class; the interviewer may still ask you to name the difference.',
+  },
+  space: {
+    bound: 'O(n)',
+    story: [
+      (m) => `Only the stack: at most n + 1 = ${m.n + 1} frames, one per position filled.`,
+      'No <code>curr</code> and no <code>used</code>. The array itself is the state, and every swap is undone on the way back up.',
+      'The result is n · n! numbers, but that is the output, not working memory.',
+    ],
+    measured: (m) => [
+      ['Deepest stack', `${m.maxDepth} frames`],
+      ['Frames created in total', `${m.calls}`],
+      ['Permutations recorded', `${m.answers}`],
+    ],
+  },
+};
+
+/* ------------------------------------------------------------------ */
 
 export const approaches = [
   {
@@ -506,6 +587,7 @@ export const approaches = [
     time: 'O(n · n!)',
     space: 'O(n)',
     spaceNote: 'The stack and curr are at most n deep; used is n flags. The n! is the output.',
+    complexity: usedComplexity,
     stackPanel: 'call',
     code: usedCode,
     build: usedFrames,
@@ -536,6 +618,7 @@ export const approaches = [
     time: 'O(n · n!)',
     space: 'O(n)',
     spaceNote: 'Only the stack, n deep. Order of output differs from the first tab; LeetCode accepts any order.',
+    complexity: swapComplexity,
     stackPanel: 'call',
     code: swapCode,
     build: swapFrames,
